@@ -72,6 +72,7 @@ const RENDER_REFRESH_TIME = 50; // time in ms to wait after rendering before ren
 
 let new_game_overlay_visible = false;
 
+const DRAG_OR_CLICK_CANVAS_DELAY = 125; // time in ms to wait before deciding if a mouse down event is a click or a drag
 
 // page_load_behavior() // define canvas and add event listeners
 
@@ -104,7 +105,7 @@ function game_loop_client() {
     setTimeout( () => { window.requestAnimationFrame(() => game_loop_client()); }, RENDER_REFRESH_TIME) // therefore each game loop will last at least tick_time ms    
 }
 
-function add_slider(overlay_inner, id_prefix, display_name, min, max, step, starting_val) {
+function add_slider(parent_div, id_prefix, display_name, min, max, step, starting_val) {
     let header_p = document.createElement('p');
     let slider_div = document.createElement('div');
     let slider_range = document.createElement('input')
@@ -126,10 +127,11 @@ function add_slider(overlay_inner, id_prefix, display_name, min, max, step, star
         document.getElementById(`${id_prefix}_label`).innerHTML = `${slider_range.value}`;
     }, false);
 
-    overlay_inner.appendChild(slider_div);
     slider_div.appendChild(header_p);
     slider_div.appendChild(slider_range);
     slider_div.appendChild(lbl_slider_val);
+    
+    parent_div.appendChild(slider_div);
 }
 
 function populate_room_overlay() {
@@ -163,74 +165,74 @@ function populate_room_overlay() {
 
 
 }
-function populate_new_game_overlay(){
-    let overlay = document.getElementById('mad-game-settings');
+// function populate_new_game_overlay(){
+//     let overlay = document.getElementById('mad-game-settings');
     
-    let overlay_container_box = document.createElement('div');
-    overlay_container_box.id = 'mad-game-settings-container';
-    overlay_container_box.addEventListener('click', function(e) { e.stopPropagation(); }); // prevent clicking on the new game box from closing the overlay
-    overlay.appendChild(overlay_container_box)
+//     let overlay_container_box = document.createElement('div');
+//     overlay_container_box.id = 'mad-game-settings-container';
+//     overlay_container_box.addEventListener('click', function(e) { e.stopPropagation(); }); // prevent clicking on the new game box from closing the overlay
+//     overlay.appendChild(overlay_container_box)
     
-    let overlay_inner = document.createElement('div');
-    overlay_inner.id = 'mad-game-settings-inner';
-    overlay_container_box.appendChild(overlay_inner)
+//     let overlay_inner = document.createElement('div');
+//     overlay_inner.id = 'mad-game-settings-inner';
+//     overlay_container_box.appendChild(overlay_inner)
     
-    let input_name = document.createElement('input');
-    input_name.id = 'input_name';
-    input_name.type = 'text';
-    input_name.value='Player One';
+//     let input_name = document.createElement('input');
+//     input_name.id = 'input_name';
+//     input_name.type = 'text';
+//     input_name.value='Player One';
     
-    let lbl_input = document.createElement('label');
-    lbl_input.id = 'lbl_input_name';
-    lbl_input.htmlFor = 'input_name';
-    lbl_input.innerHTML='Name';
+//     let lbl_input = document.createElement('label');
+//     lbl_input.id = 'lbl_input_name';
+//     lbl_input.htmlFor = 'input_name';
+//     lbl_input.innerHTML='Name';
 
-    overlay_inner.appendChild(lbl_input);
-    overlay_inner.appendChild(input_name);
+//     overlay_inner.appendChild(lbl_input);
+//     overlay_inner.appendChild(input_name);
 
-    add_slider(overlay_inner, 'bots', 'Bots', 1, 10, 1, 3);
-    add_slider(overlay_inner, 'rows', 'Rows', 10, 30, 1, 15);
-    add_slider(overlay_inner, 'cols', 'Cols', 10, 45, 1, 15);
-    add_slider(overlay_inner, 'mountains', 'Mountain Spawn Rate', 1, 100, 1, 15);
-    add_slider(overlay_inner, 'ships', 'Ship Spawn Rate', 1, 100, 1, 5);
-    add_slider(overlay_inner, 'swamps', 'Swamp Spawn rate', 1, 100, 1, 5);
+//     add_slider(overlay_inner, 'bots', 'Bots', 1, 10, 1, 3);
+//     add_slider(overlay_inner, 'rows', 'Rows', 10, 30, 1, 15);
+//     add_slider(overlay_inner, 'cols', 'Cols', 10, 45, 1, 15);
+//     add_slider(overlay_inner, 'mountains', 'Mountain Spawn Rate', 1, 100, 1, 15);
+//     add_slider(overlay_inner, 'ships', 'Ship Spawn Rate', 1, 100, 1, 5);
+//     add_slider(overlay_inner, 'swamps', 'Swamp Spawn rate', 1, 100, 1, 5);
     
-    //document.getElementById('id').checked
-    let lbl_fow = document.createElement('label')
-    lbl_fow.innerHTML='Fog of War';
+//     //document.getElementById('id').checked
+//     let lbl_fow = document.createElement('label')
+//     lbl_fow.innerHTML='Fog of War';
 
-    let radio_fog_on = document.createElement('input');
-    radio_fog_on.id = 'radio_fog_on';
-    radio_fog_on.type = 'radio';
-    radio_fog_on.name='Fog of War';
-    radio_fog_on.value='On';
-    radio_fog_on.checked= true;
-    let lbl_fow_on = document.createElement('label')
-    lbl_fow_on.innerHTML='On';
+//     let radio_fog_on = document.createElement('input');
+//     radio_fog_on.id = 'radio_fog_on';
+//     radio_fog_on.type = 'radio';
+//     radio_fog_on.name='Fog of War';
+//     radio_fog_on.value='On';
+//     radio_fog_on.checked= true;
+//     let lbl_fow_on = document.createElement('label')
+//     lbl_fow_on.innerHTML='On';
     
-    let radio_fog_off = document.createElement('input');
-    radio_fog_off.id = 'radio_fog_off';
-    radio_fog_off.type = 'radio';
-    radio_fog_off.name='Fog of War';
-    radio_fog_off.value='Off';
-    let lbl_fow_off = document.createElement('label')
-    lbl_fow_off.innerHTML='Off';
+//     let radio_fog_off = document.createElement('input');
+//     radio_fog_off.id = 'radio_fog_off';
+//     radio_fog_off.type = 'radio';
+//     radio_fog_off.name='Fog of War';
+//     radio_fog_off.value='Off';
+//     let lbl_fow_off = document.createElement('label')
+//     lbl_fow_off.innerHTML='Off';
     
-    overlay_inner.appendChild(lbl_fow);
-    overlay_inner.appendChild(document.createElement('br'));
-    overlay_inner.appendChild(radio_fog_on);
-    overlay_inner.appendChild(lbl_fow_on);
-    overlay_inner.appendChild(document.createElement('br'));
-    overlay_inner.appendChild(radio_fog_off);
-    overlay_inner.appendChild(lbl_fow_off);
-    overlay_inner.appendChild(document.createElement('br'));
+//     overlay_inner.appendChild(lbl_fow);
+//     overlay_inner.appendChild(document.createElement('br'));
+//     overlay_inner.appendChild(radio_fog_on);
+//     overlay_inner.appendChild(lbl_fow_on);
+//     overlay_inner.appendChild(document.createElement('br'));
+//     overlay_inner.appendChild(radio_fog_off);
+//     overlay_inner.appendChild(lbl_fow_off);
+//     overlay_inner.appendChild(document.createElement('br'));
     
-    let ok_button = document.createElement('button');
-    ok_button.innerHTML = 'Create Game'
-    ok_button.addEventListener('click', launch_new_game);
-    overlay_inner.appendChild(ok_button);
+//     let ok_button = document.createElement('button');
+//     ok_button.innerHTML = 'Create Game'
+//     ok_button.addEventListener('click', launch_new_game);
+//     overlay_inner.appendChild(ok_button);
        
-}
+// }
 
 function launch_new_game(event) { 
     console.log('launch new game!')
@@ -657,6 +659,8 @@ function highlight_active_cell() {
     }); 
 }
 
+
+
 function canvas_mouse_handler(event) {
     // console.log('MOUSE DETECTED')
     // console.log(event)
@@ -834,12 +838,13 @@ function add_to_queue(source_row, source_col, target_row, target_col, dir) {
 }
 // Adapted from https://www.w3schools.com/howto/howto_js_draggable.asp, but my version's even cooler
 function drag_canvas_event_handler(canvas_element) {
-    let x_dest = 0, y_dest = 0, x_origin = 0, y_origin = 0;
+    let x_dest = 0, y_dest = 0, x_origin = 0, y_origin = 0, x_current = 0, y_current = 0;
     let mousedown_timer = null; // delay drag until the mouse has been briefly held down, to avoid accidental dragging during normal play
     canvas_element.onmousedown = mouse_down_on_canvas;
 
     function mouse_down_on_canvas(event) {
-        if (event.button == 0) { // if left click
+        // if (event.button == 0) { // if left click
+        if (true) {
             event = event || window.event;
             event.preventDefault();
 
@@ -847,6 +852,9 @@ function drag_canvas_event_handler(canvas_element) {
 
             x_origin = event.clientX;
             y_origin = event.clientY;
+            x_current = x_origin;
+            y_current = y_origin;
+            
 
             document.onmouseup = stop_dragging; // stop dragging when the mouse is unclicked (even if it's outside the bounds of the canvas) 
             document.onmousemove = drag_canvas; // drag whenever the mouse is clicked is moving (even if it's outside the bounds of the canvas) 
@@ -857,12 +865,12 @@ function drag_canvas_event_handler(canvas_element) {
         event = event || window.event;
         event.preventDefault();
 
-        if (Date.now() - mousedown_timer > 125) {
+        if (Date.now() - mousedown_timer > DRAG_OR_CLICK_CANVAS_DELAY) {
             // calculate the new cursor position:
-            x_dest = x_origin - event.clientX;
-            y_dest = y_origin - event.clientY;
-            x_origin = event.clientX;
-            y_origin = event.clientY;
+            x_dest = x_current - event.clientX;
+            y_dest = y_current - event.clientY;
+            x_current = event.clientX;
+            y_current = event.clientY;
 
             // set the element's new position:
             canvas_element.style.top = (canvas_element.offsetTop - y_dest) + "px";
@@ -870,9 +878,20 @@ function drag_canvas_event_handler(canvas_element) {
         }
     }
 
-    function stop_dragging() { // stop moving when mouse button is released:    
+    function stop_dragging(event) { // stop moving when mouse button is released:    
         document.onmouseup = null;
         document.onmousemove = null;
+
+        if (Date.now() - mousedown_timer <= DRAG_OR_CLICK_CANVAS_DELAY) {
+            console.log('TESTING!!!!!')
+            canvas_mouse_handler(event);
+        } else if (x_current == x_origin && y_current == y_origin) {
+            console.log('did not move canvas, just clicked')
+            canvas_mouse_handler(event);
+        }
+        else {
+            console.log('welp')
+        }
     }
 }
 

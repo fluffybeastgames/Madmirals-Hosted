@@ -1,0 +1,20 @@
+
+    function get_tide_level(game_tick_server) {
+        // returns a number between 0 and 1, where 0 is low tide and 1 is high tide
+        let tide_level = 0;
+        let tide_period = 100;
+        let tide_phase = game_tick_server % tide_period;
+        if (tide_phase < tide_period/2) {
+            tide_level = tide_phase / (tide_period/2);
+        }
+        else {
+            tide_level = 1 - (tide_phase - tide_period/2) / (tide_period/2);
+        }
+        return tide_level;
+    }
+
+
+    for (i=0; i<1000; i++){
+        console.log(this.get_tide_level(i));
+        
+    }

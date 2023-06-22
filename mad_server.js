@@ -56,7 +56,7 @@ function start_new_game(room_id, game_data_json) {
     let game_data = JSON.parse(game_data_json)
 
     let player_socket_ids = io.sockets.adapter.rooms.get(room_id);
-    
+
     let new_game = new Game(room_id, game_data, player_socket_ids);
 
     const i = rooms.findIndex(e => e.room_id === room_id); 
@@ -144,9 +144,18 @@ class Game {
     // }
 
     add_humans(player_socket_ids, human_colors) {
+
+        // for (let socket_id of player_socket_ids) {
+        //     //console.log('socket_id', socket_id.nickname)
+        //     let sock = io.sockets.sockets.get(socket_id);
+        //     console.log('sock', sock.nickname)
+        // }
+
         let i = 0;
         player_socket_ids.forEach(socket_id => {
-            this.add_human(socket_id, 'Player ' + i, human_colors[i]);
+            let sock = io.sockets.sockets.get(socket_id);
+            let nickname = sock.nickname;
+            this.add_human(socket_id, nickname, human_colors[i]);
             i++;
         });
     }
@@ -1146,7 +1155,12 @@ io.on('connection', (socket) => {
     // socket.join('global_lobby');
 
     // socket.emit('client_connected')
+    socket.on('set_name', function(new_name){ // user clicked Create Room
+        socket.nickname = new_name;
+        console.log('set_name to ', socket.nickname)
 
+        // console.log('current nicknames:')
+    });
     
     socket.on('create_room', function(){ // user clicked Create Room
         if(debug_mode){console.log('create_room')}

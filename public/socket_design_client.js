@@ -194,8 +194,17 @@ function new_game_client(game_data_string) {
 }
 
 
+function switch_to_login_gui() {
+    document.getElementById('mad-login-div').style.display = 'block';
+    document.getElementById('mad-lobby-div').style.display = 'none';
+    document.getElementById('mad-waiting-room-div').style.display = 'none';
+    document.getElementById('mad-game-div').style.display = 'none';
+    document.getElementById('mad-news-div').style.display = 'none';
+    document.getElementById('mad-scoreboard-div').style.display = 'none';
+}
 
 function switch_to_waiting_room_gui() {
+    document.getElementById('mad-login-div').style.display = 'none';
     document.getElementById('mad-lobby-div').style.display = 'none';
     document.getElementById('mad-waiting-room-div').style.display = 'block';
     document.getElementById('mad-game-div').style.display = 'none';
@@ -205,6 +214,7 @@ function switch_to_waiting_room_gui() {
 }
 
 function switch_to_lobby_gui() {
+    document.getElementById('mad-login-div').style.display = 'none';
     document.getElementById('mad-lobby-div').style.display = 'block';
     document.getElementById('mad-waiting-room-div').style.display = 'none';
     document.getElementById('mad-game-div').style.display = 'none';
@@ -215,6 +225,7 @@ function switch_to_lobby_gui() {
 }
 
 function switch_to_game_gui() {
+    document.getElementById('mad-login-div').style.display = 'none';
     document.getElementById('mad-lobby-div').style.display = 'none';
     document.getElementById('mad-waiting-room-div').style.display = 'none';
     document.getElementById('mad-game-div').style.display = 'block';
@@ -265,9 +276,62 @@ function get_selected_room() {
 
 
 function populate_gui() {  
+    function get_login_div() {
+        let div = document.createElement('div');
+        div.id = 'mad-login-div';
+
+        let login_form = document.createElement('form');
+        login_form.id = 'login_form';
+        div.appendChild(login_form);
+
+        let lbl_input = document.createElement('label');
+        lbl_input.htmlFor = 'input_name';
+        lbl_input.innerText = 'Your Name';
+        let input_name = document.createElement('input');
+        input_name.id = 'input_name';
+        input_name.type = 'text';
+        input_name.value='Player One';
+        
+        let login_button = document.createElement('button');
+        login_button.innerText = 'Set Name';
+    
+        login_form.appendChild(lbl_input);
+        // login_form.appendChild(document.createElement('br'));
+        login_form.appendChild(input_name);
+        login_form.appendChild(login_button);
+
+        login_form.addEventListener('submit', function handleSubmit(event) {
+            let nickname = input_name.value;
+            if(nickname.length > 0) {
+                console.log('Name set to ', nickname);
+                event.preventDefault();
+                socket_local.emit('set_name', nickname);
+                let p_name = document.getElementById('player_name');
+                p_name.innerHTML = `Playing as ${nickname}`
+                switch_to_lobby_gui();
+            
+                localStorage.setItem("nickname", nickname);
+
+            };
+        });
+
+        return div;
+    }
+
     function get_news_div() {
         let div = document.createElement('div');
         div.id = 'mad-news-div';
+
+        let p_name = document.createElement('p')
+        p_name.innerHTML = '' // once logged in the user's name will appear here
+        p_name.id = 'player_name';
+        
+        let change_name = document.createElement('button');
+        change_name.innerText = 'Set Name';
+        change_name.addEventListener('click', function(){
+            console.log('set name');
+            switch_to_login_gui();
+        });
 
         let p_news = document.createElement('p')
         p_news.innerHTML = 'News Feed'
@@ -275,8 +339,20 @@ function populate_gui() {
         let p_players = document.createElement('p')
         p_players.innerHTML = 'Players Online: 0'
         p_players.id = 'players_online'
-        div.appendChild(p_news);
+
+        let btn_how_to_play = document.createElement('button');
+        btn_how_to_play.innerText = 'How to Play';
+        btn_how_to_play.addEventListener('click', function(){
+            console.log('how to play');
+        });
+
+        div.appendChild(p_name);
+        div.appendChild(change_name);
         div.appendChild(p_players);
+        div.appendChild(p_news);
+        div.appendChild(btn_how_to_play);
+
+        
 
         return div;
     }
@@ -347,30 +423,38 @@ function populate_gui() {
         let div = document.createElement('div');
         div.id = 'mad-waiting-room-div'
 
-
-        let overlay_inner = document.createElement('div');
-        overlay_inner.id = 'mad-game-settings-inner';
-        div.appendChild(overlay_inner)
+        let game_settings_left = document.createElement('div');
+        game_settings_left.classList.add('mad-game-settings-inner');
+        div.appendChild(game_settings_left)
         
-        let input_name = document.createElement('input');
-        input_name.id = 'input_name';
-        input_name.type = 'text';
-        input_name.value='Player One';
+        // let game_settings_mid = document.createElement('div');
+        // game_settings_mid.classList.add('mad-game-settings-inner');
+        // div.appendChild(game_settings_mid)
         
-        let lbl_input = document.createElement('label');
-        lbl_input.id = 'lbl_input_name';
-        lbl_input.htmlFor = 'input_name';
-        lbl_input.innerHTML='Name';
+        // let game_settings_right = document.createElement('div');
+        // game_settings_right.classList.add('mad-game-settings-inner');
+        // div.appendChild(game_settings_right)
+        
+        
+        // let input_name = document.createElement('input');
+        // input_name.id = 'input_name';
+        // input_name.type = 'text';
+        // input_name.value='Player One';
+        
+        // let lbl_input = document.createElement('label');
+        // lbl_input.id = 'lbl_input_name';
+        // lbl_input.htmlFor = 'input_name';
+        // lbl_input.innerHTML='Name';
     
-        overlay_inner.appendChild(lbl_input);
-        overlay_inner.appendChild(input_name);
+        // game_settings_left.appendChild(lbl_input);
+        // game_settings_left.appendChild(input_name);
     
-        add_slider(overlay_inner, 'bots', 'Bots', 1, 10, 1, Math.floor(Math.random() * 4) + 1);
-        add_slider(overlay_inner, 'rows', 'Rows', 10, 30, 1, Math.floor(Math.random() * 10) + 10);
-        add_slider(overlay_inner, 'cols', 'Cols', 10, 45, 1, Math.floor(Math.random() * 15) + 15);
-        add_slider(overlay_inner, 'mountains', 'Mountain Spawn Rate', 1, 100, 1, 15);
-        add_slider(overlay_inner, 'ships', 'Ship Spawn Rate', 1, 100, 1, 5);
-        add_slider(overlay_inner, 'swamps', 'Swamp Spawn rate', 1, 100, 1, 5);
+        add_slider(game_settings_left, 'bots', 'Bots', 1, 10, 1, Math.floor(Math.random() * 4) + 1);
+        add_slider(game_settings_left, 'rows', 'Rows', 10, 30, 1, Math.floor(Math.random() * 10) + 10);
+        add_slider(game_settings_left, 'cols', 'Cols', 10, 45, 1, Math.floor(Math.random() * 15) + 15);
+        add_slider(game_settings_left, 'mountains', 'Mountain Spawn Rate', 1, 100, 1, 15);
+        add_slider(game_settings_left, 'ships', 'Ship Spawn Rate', 1, 100, 1, 5);
+        add_slider(game_settings_left, 'swamps', 'Swamp Spawn rate', 1, 100, 1, 5);
         
         //document.getElementById('id').checked
         let lbl_fow = document.createElement('label')
@@ -393,14 +477,14 @@ function populate_gui() {
         let lbl_fow_off = document.createElement('label')
         lbl_fow_off.innerHTML='Off';
         
-        overlay_inner.appendChild(lbl_fow);
-        overlay_inner.appendChild(document.createElement('br'));
-        overlay_inner.appendChild(radio_fog_on);
-        overlay_inner.appendChild(lbl_fow_on);
-        overlay_inner.appendChild(document.createElement('br'));
-        overlay_inner.appendChild(radio_fog_off);
-        overlay_inner.appendChild(lbl_fow_off);
-        overlay_inner.appendChild(document.createElement('br'));
+        game_settings_left.appendChild(lbl_fow);
+        game_settings_left.appendChild(document.createElement('br'));
+        game_settings_left.appendChild(radio_fog_on);
+        game_settings_left.appendChild(lbl_fow_on);
+        game_settings_left.appendChild(document.createElement('br'));
+        game_settings_left.appendChild(radio_fog_off);
+        game_settings_left.appendChild(lbl_fow_off);
+        game_settings_left.appendChild(document.createElement('br'));
         
         // let ok_button = document.createElement('button');
         // ok_button.innerHTML = 'Create Game'
@@ -544,7 +628,7 @@ function populate_gui() {
         
         // let context = canvas.getContext('2d');
     
-        canvas.addEventListener('mousedown', function (event) { canvas_mouse_handler(event) }, false); //our main click handler function
+        // canvas.addEventListener('mousedown', function (event) { canvas_mouse_handler(event) }, false); //our main click handler function
         canvas.addEventListener('contextmenu', function(event) { event.preventDefault(); }, false); // prevent right clicks from bringing up the context menu
         canvas.addEventListener('wheel', function (event) { wheel_handler(event) },  {passive: true}); // zoom in/out with the scroll wheel
         document.body.addEventListener('wheel', function (event) { wheel_handler(event) },  {passive: true}); // zoom in/out with the scroll wheel
@@ -552,7 +636,7 @@ function populate_gui() {
         
         // Add event listener on keydown
         document.addEventListener('keydown', (event) => {
-            if (document.activeElement.id == 'input_chat') { //don't handle key presses if the user is typing in the chat box
+            if (document.activeElement.id == 'input_chat' || document.activeElement.id == 'input_name') { //don't handle key presses if the user is typing in the chat box
                 
             } else {
                 //if (VALID_KEY_PRESSES.includes(event.key) && !new_game_overlay_visible) {
@@ -569,6 +653,7 @@ function populate_gui() {
     
     let parent_div = document.getElementById('mad_div');
 
+    let login_div = get_login_div(); // login screen
     let lobby_div = get_lobby_div(); //the global lobby
     let news_div = get_news_div(); // the news feed
     let room_div = get_waiting_room_div(); // the waiting room between games
@@ -577,7 +662,7 @@ function populate_gui() {
     let chat_div = get_chat_div();
     let footer_div = document.createElement('div');
     
-
+    parent_div.appendChild(login_div);
     parent_div.appendChild(lobby_div);
     parent_div.appendChild(room_div);
     parent_div.appendChild(game_scoreboard);
@@ -586,7 +671,18 @@ function populate_gui() {
     parent_div.appendChild(footer_div);
     parent_div.appendChild(news_div);
 
-    switch_to_lobby_gui();
+    if (localStorage.getItem("nickname") != null) {
+        let nickname = localStorage.getItem("nickname");
+        document.getElementById('input_name').value = nickname;
+        socket_local.emit('set_name', nickname);
+        let p_name = document.getElementById('player_name');
+        p_name.innerHTML = `Playing as ${nickname}`
+        switch_to_lobby_gui();
+    }
+    else {
+        switch_to_login_gui();
+    }
+    
 
     // document.getElementById("para").onclick = function() {  }
 }

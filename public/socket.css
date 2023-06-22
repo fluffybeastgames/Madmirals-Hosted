@@ -35,7 +35,17 @@ body {
     margin: auto;
     padding: 20;    
     outline: thick solid #222288;
-    width: 50%;
+    width: 33%;
+    background-color: #BBBBBB;
+}
+
+#mad-login-div {
+    display: block;
+    margin: auto;
+    padding: 20;    
+    outline: thick solid #882288;
+    width: 33%;
+    height: 25%;
     background-color: #BBBBBB;
 }
 
@@ -45,6 +55,15 @@ body {
     padding: 20;    
     outline: thick solid #228822;
     width: 50%;
+    background-color: #BBBBBB;
+}
+
+.mad-game-settings-inner {
+    display: block;
+    margin: auto;
+    padding: 20;    
+    outline: thick solid #882222;
+    width: 33%;
     background-color: #BBBBBB;
 }
 
