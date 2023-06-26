@@ -97,14 +97,18 @@ class Game {
                                     '#FF0000', '#FF8000', '#00FF00', '#FF00FF'];  
         player_color_options = player_color_options.sort((a, b) => 0.5 - Math.random()); // loosely shuffled array of colors to assign to players
 
-        let n_bots = 'n_bots' in game_data ? game_data.n_bots : Math.floor(Math.random()*4) + 1;;
+        let n_bots = 'n_bots' in game_data ? game_data.n_bots : Math.floor(Math.random()*4) + 1;; // get the number of bots to add to the game
+        //allow 0 b
+        let n_humans = player_socket_ids.length;
+        if (n_humans < 2) {
+            n_bots = Math.max(n_bots, 1); // if there is only one human player, make sure there is at least one bot
+        }
+        
         this.add_bots(n_bots, player_color_options.slice(0, n_bots));
 
         console.log('n_bots', n_bots);
 
         this.add_humans(player_socket_ids, player_color_options.slice(n_bots));
-        // let player_name = 'player_name' in game_data ? game_data.player_name : 'Player One';
-        // this.add_human('12345678', player_name, '#0a5a07');
     
         this.spawn_admirals(25); // create an admiral entity for each player, param is the number of troops they start with
         console.log('admirals have been placed')
@@ -122,35 +126,8 @@ class Game {
 
 
     }
-    // constructor_old(room_id, game_id, n_rows, n_cols, fog_of_war) {
-    //     this.room_id = room_id; // name of the lobby this game belongs to
-    //     this.game_id = game_id; // a unique? reference to this particular game
-        
-    //     this.players = []
-    //     this.player_turn_order = []
-    //     this.status = GAME_STATUS_INIT
-    //     this.game_on; // when game_on, the game will loop every ~tick_speed ms, increasing the game_tick and advancing the simulation
-    //     this.fog_of_war = fog_of_war;
-    //     this.num_rows = n_rows
-    //     this.num_cols =  n_cols
-    //     this.cells = []; // will hold an array Cell objects. This will become the server-side all-knowing set of cells
-    //     this.initialize_cells();
-    //     this.astar_board = new path_finder.ABoard(this.num_rows, this.num_cols, 0);
-    //     this.astar = new path_finder.AStar(this.astar_board);
-    //     this.game_tick_server = -1;
-    //     this.tick_speed = DEFAULT_TICK_SPEED; // ms to wait before rendering each new frame
-
-    //     // this.astar.print_board([0,0], [1,1]);
-    // }
 
     add_humans(player_socket_ids, human_colors) {
-
-        // for (let socket_id of player_socket_ids) {
-        //     //console.log('socket_id', socket_id.nickname)
-        //     let sock = io.sockets.sockets.get(socket_id);
-        //     console.log('sock', sock.nickname)
-        // }
-
         let i = 0;
         player_socket_ids.forEach(socket_id => {
             let sock = io.sockets.sockets.get(socket_id);
@@ -258,7 +235,8 @@ class Game {
                     let cell_id_source, cell_id_dest;
                     cell_id_source = move.row * this.num_cols + move.col; // 0 is the topleft most cells, and there this.num_cols cols per row        
                     cell_id_dest = move.target_row * this.num_cols + move.target_col
-    
+
+                    console.log (`TEST: cell_id_source: ${cell_id_source}, this.cells.length: ${this.cells.length}`)
                     // Only complete the move if the queuer owns the source cell
                     if (this.cells[cell_id_source].owner == move.queuer) {                   
                         // Is it a valid destination?
@@ -475,7 +453,6 @@ class Game {
     send_message_to_game_room(message) {
         io.to(this.room_id).emit('receive_chat_message', message)
     }
-
         
     //An attempt at predicting what the server to client communication will look like
     send_game_state_to_players(emit_code) {
@@ -525,7 +502,7 @@ class Game {
             else if (cell.terrain == TERRAIN_TYPE_MOUNTAIN || [ENTITY_TYPE_SHIP, ENTITY_TYPE_SHIP_2, ENTITY_TYPE_SHIP_3, ENTITY_TYPE_SHIP_4].includes(cell.entity)) {
                 let cell_string = `{ "id":${cell.id}, "row":${cell.row}, "col":${cell.col}`;
                 cell_string += `, "terrain":${TERRAIN_TYPE_MOUNTAIN}`
-                if (true) {cell_string += `, "visible":true`}
+                if (true) {cell_string += `, "visible":false`}
     
                 cell_string += '}, '
                 game_string += cell_string ;
@@ -542,16 +519,9 @@ class Game {
         game_string = game_string.slice(0,-2); // remove the last two characters from the string - always a trailing ', ' since there's always going to be 1+ players
         game_string += '] }'; // close the scoreboard and whole json object
         
-        // send the game data the specified player
-        // TODO this is currently emiting to everyone, need it to go to just the desired player
-        // console.log(game_string)
-        io.to(socket_id).emit(emit_code, game_string);  // either 'new_game_from_server' or 'client_receives_game_state'
-        // io.emit(emit_code, game_string);  // either 'client_connected' or 'client_receives_game_state'
-        // io.to("global_lobby").emit(emit_code, game_string);  // either 'client_connected' or 'client_receives_game_state'
-        
+        io.to(socket_id).emit(emit_code, game_string);  
     }
 
-            
     should_be_visible(cell, player_id, fog_of_war_distance) {
         if (!this.fog_of_war) {
             return true;
@@ -616,9 +586,12 @@ class Game {
         
         let remaining_humans_count = 0; // make sure at least 1 human player is still in the game
         let remaining_bots_count = 0; // make sure at least 1 human player is still in the game
+        let remaining_human_name = '' // if there is exactly 1 human player left, this will identify them in chat
+
         for (let i = 0; i < admiral_count.length; i++) {
             if (admiral_count[i] > 0 && this.players[i].is_human) {
                 remaining_humans_count++;
+                remaining_human_name = this.players[i].display_name;
             } else if (admiral_count[i] > 0 && !this.players[i].is_human) {
                 remaining_bots_count++;
             };
@@ -628,16 +601,16 @@ class Game {
             this.game_on = false;
             this.status = GAME_STATUS_GAME_OVER_LOSE;
             console.log('Game over! Humans lose.'); // TODO pass this info on to the client
+            this.send_message_to_game_room('Game over! Humans lose.')
 
         } else if (remaining_bots_count == 0 && remaining_humans_count == 1) {
             this.game_on = false;
             this.status = GAME_STATUS_GAME_OVER_WIN;
             console.log(`Game over! Player wins!!!`); // TODO pass this info on to the client
+            this.send_message_to_game_room(`${remaining_human_name} wins!`)
         };
-    }
-
+    };
 }
-
 
 class CellServer {
     constructor(parent, id, row, col) {
@@ -946,73 +919,6 @@ class Bot {
     };
 }
 
-// //if('owner' in new_cell) { cells_client[new_cell.id].owner = new_cell.owner };
-// function init_server(game_data_json) {
-//     request_new_game(game_data_json); // server side initiation process for a new game
-// }
-
-// function request_new_game(lobby_id, game_data_json) {
-//     console.log('i am request_new_game')
-//     let game_data = JSON.parse(game_data_json)
-
-//     let new_game_id = 'g' + Math.floor(Math.random()*10**16); // TODO possibly temp - make into the room id of the lobby that created this game?
-    
-
-//     // For each possible game setting, use the json input value, if present, and default to random/default values
-//     let n_rows = 'n_rows' in game_data ? game_data.n_rows : 15 + Math.floor(Math.random()*15);;
-//     let n_cols = 'n_cols' in game_data? game_data.n_cols : 15 + Math.floor(Math.random()*25);;;
-//     let fog_of_war = 'fog_of_war' in game_data? game_data.fog_of_war : Math.random() > .5;
-//     let n_bots = 'n_bots' in game_data ? game_data.n_bots : Math.floor(Math.random()*11) + 1;;
-
-//     let water_weight = 'water_weight' in game_data ? game_data.water_weight : 10 + Math.random();
-//     let mountain_weight = 'mountain_weight' in game_data ? game_data.mountain_weight : 1 + Math.random();
-//     let swamp_weight  = 'swamp_weight' in game_data ? game_data.swamp_weight : .1 + Math.random() / 4 ; 
-//     let ship_weight = 'ship_weight' in game_data ? game_data.ship_weight : .2 + Math.random() / 2;
-    
-//     const bot_color_options = ['#C50F1F', '#C19C00', '#881798', '#E74856', '#16C60C', '#F9A1A5', '#B4009E', '#61D6D6', '#2222F2', '#8C8C8C', '#B9B165'];
-//     const bot_name_options = [ 'Admiral Blunderdome', 'Admiral Clumso', 'Admiral Tripfoot', 'Admiral Klutz', 'Admiral Fumblebum', 'Captain Bumblebling', 
-//                                 'Admiral Fuming Bull', 'Commodore Rage', 'Commodore Clumsy', 'Seadog Scatterbrain', 'The Crazed Seadog', 'Admiral Irritable', 
-//                                 'Captain Crazy', 'The Mad Mariner', 'The Lunatic Lighthousekeeper', 'The Poetic Pirate', 'The Fiery Fisherman', 'The Irascible Islander', 
-//                                 'The Tempestuous Troubadour', 'The Irate Inventor', 'The Eccentric Explorer', 'Tempestuous King Triton', 'Mad Mariner', 
-//                                 'Wrathful Wave Rider', 'Vivid Voyager', 'Rhyming Rover', 'Bluemad Admiral Bee', 'The Scarlet Steersman', 'Jocular Jade Jack Tar', 
-//                                 'Captain Kindly', 'Captain Cruelty', 'Commodore Limpy']; 
-
-    
-//     // games.push(new Game(n_rows, n_cols, fog_of_war);)
-//     let new_g = new Game(lobby_id, new_game_id, n_rows, n_cols, fog_of_war);
-    
-//     let player_name = 'player_name' in game_data ? game_data.player_name : 'Player One';
-//     new_g.add_human('12345678', player_name, '#0a5a07');
-
-//     for (let i = 0; i < n_bots; i++) {
-//         let bot_color_index = Math.floor(Math.random()*bot_color_options.length);
-//         let bot_color = bot_color_options[bot_color_index];
-//         bot_color_options.splice(bot_color_index, 1);
-
-//         let bot_name_index = Math.floor(Math.random()*bot_name_options.length);
-//         let bot_name = bot_name_options[bot_name_index];
-//         bot_name_options.splice(bot_name_index, 1);
-
-//         new_g.add_bot('bot personality', bot_name, bot_color);
-//     };
-
-//     new_g.spawn_admirals(25); // create an admiral entity for each player, param is the number of troops they start with
-//     new_g.spawn_terrain(water_weight, mountain_weight, swamp_weight, ship_weight);
-    
-//     new_g.status = GAME_STATUS_IN_PROGRESS;
-//     new_g.game_on = true; // start with the simulation running instead of paused
-
-//     // new_g.send_game_state_to(0, 'new_game_from_server');
-//     games[new_game_id] = new_g; // add game to the list of active games
-
-//     console.log('i was request_new_game. new game id: ', new_game_id)
-
-//     return new_game_id;
-// }
-
-
-
-
 function weighted_choice(arr_options) {
 //Given an array of objects containing a key 'weight' containing a non-negative number. The bigger the number, the more likely it is to be picked
     let total_weight = 0; 
@@ -1072,7 +978,7 @@ function update_lobby_info() {
         // console.log('Emitting to room ' + room.room_id)
         let g_room = io.sockets.adapter.rooms.get(room.room_id);
         if(g_room) {
-            let players = io.sockets.adapter.rooms.get(room.room_id).size
+            let players = g_room.size
         
             let room_row = {'room_id':room.room_id, 'game_mode':'Free For All', 'players':`${players}/8`, 'bots':'2','status':'Open'}
             list_open_rooms.push(room_row)
@@ -1082,38 +988,6 @@ function update_lobby_info() {
     return list_open_rooms
 
 }
-
-// function game_state(room) {
-// // Returns an object representing the current game state and other pertinent information about the current room
-// //TODO THIS IS A PLACEHOLDER FROM SOCKET_DESIGN_SERVER - replace w/ appropriate data
-    
-//     // for game in games { };
-//     // if(room_id in games) {
-
-//     let data = {}
-//     data['room_id'] = room.room_id;
-//     if (room.game) {
-//         data['game_tick_server'] = room.game.game_tick_server;
-        
-//     }
-    
-
-
-//     // let data = {
-//     //     'room_id': room.room_id,
-//     //     players: [],
-//     //     'game_mode': 'Free For All',
-//     //     'game_status': 'In Progress',
-//     //     'game_turn': 1,
-
-//     // };
-//     return data;
-    
-// }
-
-
-
-
 
 
 const express = require('express');
@@ -1147,10 +1021,10 @@ class Room {
     }
 }
 io.on('connection', (socket) => {
-    console.log(`user ${socket.id} connected`);
+    console.log(`user ${socket.id} / ${socket.nickname}  connected`);
 
     ////FROM socket_design:
-    mad_log(`user ${socket.id} connected`)
+    mad_log(`user ${socket.nickname} connected`)
     socket.join('lobby');
     // socket.join('global_lobby');
 
@@ -1179,7 +1053,7 @@ io.on('connection', (socket) => {
         if (i > -1) {//rooms[i] contains the room object with id room_to_join
             socket.join(room_to_join)
             io.to(socket.id).emit('client_joined_room', room_to_join)
-            socket.to(room_to_join).emit('a_user_joined_the_room', socket.id)
+            socket.to(room_to_join).emit('a_user_joined_the_room', socket.nickname)
         } else {
             console.log(`Socket ${socket.id} attempted to join non-existent room ${room_to_join}`);
         }
@@ -1189,7 +1063,7 @@ io.on('connection', (socket) => {
 
     socket.on('leave_game_room', function(room_id){ // user clicked Leave Room button
         if(debug_mode){console.log('leave_room - room:', room_id )}
-        socket.to(room_id).emit('a_user_left_the_room', socket.id)
+        socket.to(room_id).emit('a_user_left_the_room', socket.nickname)
         socket.leave(room_id);
 
         //if the user was the last human in the room, kill the room
@@ -1224,7 +1098,7 @@ io.on('connection', (socket) => {
 
     socket.on('send_chat_message', function(room_id, msg){ // user sent a chat message 
         if(debug_mode){console.log('send_chat_message', room_id, msg)}
-        io.to(room_id).emit('receive_chat_message', socket.id + ': ' + msg)
+        io.to(room_id).emit('receive_chat_message', socket.nickname + ': ' + msg)
     });
 
 
@@ -1430,6 +1304,9 @@ server.listen(PORT, () => {
 
                     for (let i = 0; i < room.game.players.length; i++) {
                         if (room.game.players[i].is_human) {
+                            //todo if player is still connected
+                            // if(io.sockets.adapter.rooms.get(room.room_id)
+                            // io.in(roomID).fetchSockets()
                             room.game.send_game_state_to(i, 'client_receives_game_state');
                         };
                         // io.to(room.players[i].socket_id).emit('tick', room.game.game_state(i));

@@ -387,10 +387,22 @@ function populate_gui() {
                     last_clicked_lobby_room_id = tbl_row.cells[0].innerHTML;
                     
                     for(let i=0; i<n_cols; i++) {
-                        tbl_row.cells[i].style.backgroundColor = '#FFBBBB' //todo only highlight this cell
+                        tbl_row.cells[i].style.backgroundColor = '#FFBBBB'
                     }   
                 }
             });
+            tbl_row.addEventListener('dblclick', function(){
+                console.log('test DOUBLE click on a row', tbl_row.id, r)
+                console.log('TODO join room')
+                if (tbl_row.cells[0].innerHTML != '-') {
+                    last_clicked_lobby_room_id = tbl_row.cells[0].innerHTML;
+                    
+                    for(let i=0; i<n_cols; i++) {
+                        tbl_row.cells[i].style.backgroundColor = '#FFBBBB'
+                    }   
+                    socket_local.emit('join_game_room', last_clicked_lobby_room_id)
+                }
+            });            
 
             for (const key of keys) {
                 const tbl_cell = document.createElement('td');
@@ -427,36 +439,25 @@ function populate_gui() {
         game_settings_left.classList.add('mad-game-settings-inner');
         div.appendChild(game_settings_left)
         
-        // let game_settings_mid = document.createElement('div');
-        // game_settings_mid.classList.add('mad-game-settings-inner');
-        // div.appendChild(game_settings_mid)
+        let game_settings_mid = document.createElement('div');
+        game_settings_mid.classList.add('mad-game-settings-inner');
+        div.appendChild(game_settings_mid)
         
-        // let game_settings_right = document.createElement('div');
-        // game_settings_right.classList.add('mad-game-settings-inner');
-        // div.appendChild(game_settings_right)
+        let game_settings_right = document.createElement('div');
+        game_settings_right.classList.add('mad-game-settings-inner');
+        div.appendChild(game_settings_right)
         
         
-        // let input_name = document.createElement('input');
-        // input_name.id = 'input_name';
-        // input_name.type = 'text';
-        // input_name.value='Player One';
+        let width_or_height_a = Math.floor(Math.random() * 15) + 15 //make sure suggested map size is wider than tall
+        let width_or_height_b = Math.floor(Math.random() * 10) + 10
         
-        // let lbl_input = document.createElement('label');
-        // lbl_input.id = 'lbl_input_name';
-        // lbl_input.htmlFor = 'input_name';
-        // lbl_input.innerHTML='Name';
-    
-        // game_settings_left.appendChild(lbl_input);
-        // game_settings_left.appendChild(input_name);
-    
-        add_slider(game_settings_left, 'bots', 'Bots', 1, 10, 1, Math.floor(Math.random() * 4) + 1);
-        add_slider(game_settings_left, 'rows', 'Rows', 10, 30, 1, Math.floor(Math.random() * 10) + 10);
-        add_slider(game_settings_left, 'cols', 'Cols', 10, 45, 1, Math.floor(Math.random() * 15) + 15);
-        add_slider(game_settings_left, 'mountains', 'Mountain Spawn Rate', 1, 100, 1, 15);
-        add_slider(game_settings_left, 'ships', 'Ship Spawn Rate', 1, 100, 1, 5);
-        add_slider(game_settings_left, 'swamps', 'Swamp Spawn rate', 1, 100, 1, 5);
+        add_slider(game_settings_mid, 'bots', 'Bots', 0, 10, 1, Math.floor(Math.random() * 4) + 1);
+        add_slider(game_settings_mid, 'cols', 'Mad Width', 10, 45, 1, Math.max(width_or_height_a, width_or_height_b));
+        add_slider(game_settings_mid, 'rows', 'Map Height', 10, 30, 1, Math.min(width_or_height_a, width_or_height_b));
+        add_slider(game_settings_right, 'mountains', 'Mountain Spawn Rate', 1, 100, 1, 15);
+        add_slider(game_settings_right, 'ships', 'Ship Spawn Rate', 1, 100, 1, 5);
+        add_slider(game_settings_right, 'swamps', 'Swamp Spawn rate', 1, 100, 1, 5);
         
-        //document.getElementById('id').checked
         let lbl_fow = document.createElement('label')
         lbl_fow.innerHTML='Fog of War';
     
@@ -477,21 +478,15 @@ function populate_gui() {
         let lbl_fow_off = document.createElement('label')
         lbl_fow_off.innerHTML='Off';
         
-        game_settings_left.appendChild(lbl_fow);
-        game_settings_left.appendChild(document.createElement('br'));
-        game_settings_left.appendChild(radio_fog_on);
-        game_settings_left.appendChild(lbl_fow_on);
-        game_settings_left.appendChild(document.createElement('br'));
-        game_settings_left.appendChild(radio_fog_off);
-        game_settings_left.appendChild(lbl_fow_off);
-        game_settings_left.appendChild(document.createElement('br'));
+        game_settings_mid.appendChild(lbl_fow);
+        game_settings_mid.appendChild(document.createElement('br'));
+        game_settings_mid.appendChild(radio_fog_on);
+        game_settings_mid.appendChild(lbl_fow_on);
+        game_settings_mid.appendChild(document.createElement('br'));
+        game_settings_mid.appendChild(radio_fog_off);
+        game_settings_mid.appendChild(lbl_fow_off);
+        game_settings_mid.appendChild(document.createElement('br'));
         
-        // let ok_button = document.createElement('button');
-        // ok_button.innerHTML = 'Create Game'
-        // ok_button.addEventListener('click', launch_new_game);
-        // overlay_inner.appendChild(ok_button);
-
-
         let waiting_room_id = document.createElement('div');
         waiting_room_id.id = 'waiting_room_id'
         waiting_room_id.innerHTML = 'Room:';
@@ -529,7 +524,7 @@ function populate_gui() {
             n_cols: document.getElementById('cols_range').value,
             n_bots: document.getElementById('bots_range').value,
             fog_of_war: document.getElementById('radio_fog_on').checked,
-            player_name: document.getElementById('input_name').value,
+            // player_name: document.getElementById('input_name').value,
             water_weight:100, // MAGIC NUMBER
             mountain_weight:Number(document.getElementById('mountains_range').value),
             ship_weight:Number(document.getElementById('ships_range').value),

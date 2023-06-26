@@ -59,11 +59,10 @@ body {
 }
 
 .mad-game-settings-inner {
-    display: block;
-    margin: auto;
-    padding: 20;    
-    outline: thick solid #882222;
+    float: left;
     width: 33%;
+    height: 500px;
+    outline: thick solid #882222;
     background-color: #BBBBBB;
 }
 

@@ -381,9 +381,9 @@ class CellClient {
             } 
 
             // this.draw_outline(water_color);
-            if (this.terrain != TERRAIN_TYPE_WATER) { 
-                this.draw_sprite(this.terrain);
-            };
+            // if (this.terrain != TERRAIN_TYPE_WATER) { 
+            //     this.draw_sprite(this.terrain);
+            // };
 
             // // If there is an admiral here, draw a star to represent it
             // if (this.entity == ENTITY_TYPE_ADMIRAL ) { //&& false) {
@@ -393,12 +393,20 @@ class CellClient {
             //     this.draw_sprite(this.entity);
             // };
 
-            if (this.entity != null) { 
-                this.draw_sprite(this.entity);
-            };
+            // if (this.entity != null) { 
+            //     this.draw_sprite(this.entity);
+            // };
             
             this.draw_troops();
-        }
+        } 
+
+        if (this.terrain != TERRAIN_TYPE_WATER) { 
+            this.draw_sprite(this.terrain);
+        };
+        if (this.entity != null) { 
+            this.draw_sprite(this.entity);
+        };
+    
     }
 
     draw_outline(color) {
@@ -665,7 +673,7 @@ function canvas_mouse_handler(event) {
     // console.log('MOUSE DETECTED')
     // console.log(event)
     event.preventDefault() // prevent default mouse behavior, mainly preventing middle click from activating scroll mode
-    
+    document.getElementById('input_chat').blur(); // remove focus from the chat box, so that the user can't accidentally type in it while playing
 
     if (game_state_data) {
         if(game_state_data.game.state==="true") { // if game is on
@@ -882,16 +890,14 @@ function drag_canvas_event_handler(canvas_element) {
         document.onmouseup = null;
         document.onmousemove = null;
 
-        if (Date.now() - mousedown_timer <= DRAG_OR_CLICK_CANVAS_DELAY) {
-            console.log('TESTING!!!!!')
+        if (Date.now() - mousedown_timer <= DRAG_OR_CLICK_CANVAS_DELAY) { // if the mouse was only dragged briefly, then treat it as a click
             canvas_mouse_handler(event);
-        } else if (x_current == x_origin && y_current == y_origin) {
-            console.log('did not move canvas, just clicked')
+        } else if (x_current == x_origin && y_current == y_origin) { //if the mouse was clicked but didn't move, still treat it as a click
             canvas_mouse_handler(event);
         }
-        else {
-            console.log('welp')
-        }
+        // else {
+        //     console.log('welp')
+        // }
     }
 }
 
