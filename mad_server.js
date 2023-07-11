@@ -282,7 +282,7 @@ class Game {
     
                             if (this.cells[cell_id_dest].owner == move.queuer) { //either we owned it already or it was just taken over
                                 //If we are trying to MOVE_ALL a ship, run a check on the appropriate logic (unload troops, move ship, or combine ships)
-                                if([ENTITY_TYPE_SHIP, ENTITY_TYPE_SHIP_2, ENTITY_TYPE_SHIP_3, ENTITY_TYPE_SHIP_4].includes(this.cells[cell_id_source].entity) ) { //} && move.action == ACTION_MOVE_ALL) { 
+                                if([ENTITY_TYPE_SHIP, ENTITY_TYPE_SHIP_2, ENTITY_TYPE_SHIP_3, ENTITY_TYPE_SHIP_4, ENTITY_TYPE_ADMIRAL].includes(this.cells[cell_id_source].entity) && move.action == ACTION_MOVE_ALL) { //} ) { 
                                     this.try_to_move_ship(cell_id_source, cell_id_dest, move.action);
                                     
                                 };
@@ -305,8 +305,15 @@ class Game {
         let dest_entity = this.cells[cell_id_dest].entity;
         let dest_terrain = this.cells[cell_id_dest].terrain;
         
-    
-        if ([ENTITY_TYPE_SHIP, ENTITY_TYPE_SHIP_2, ENTITY_TYPE_SHIP_3, ENTITY_TYPE_SHIP_4, null].includes(dest_entity) && // make sure we're not moving into an admiral
+        if(source_entity == ENTITY_TYPE_ADMIRAL) { // if we're moving an admiral, make sure we're not moving into a ship
+            if(dest_entity==null && dest_terrain==TERRAIN_TYPE_WATER) { // make sure we're able to put an admiral here
+                this.cells[cell_id_source].entity = null;
+                this.cells[cell_id_dest].entity = ENTITY_TYPE_ADMIRAL;
+                // this.cells[cell_id_dest].troops = null;
+                // this.cells[cell_id_dest].entity = ENTITY_TYPE_ADMIRAL;
+                
+            }
+        } else if ([ENTITY_TYPE_SHIP, ENTITY_TYPE_SHIP_2, ENTITY_TYPE_SHIP_3, ENTITY_TYPE_SHIP_4, null].includes(dest_entity) && // make sure we're not moving into an admiral
                     [TERRAIN_TYPE_WATER, TERRAIN_TYPE_SWAMP].includes(dest_terrain)) { // make sure we're able to put a ship here
                 
             let mast_count = 0;
@@ -382,6 +389,9 @@ class Game {
                 if(cell.owner == victim_id) {
                     cell.owner = culprit_id;
                     cell.troops = Math.max(Math.floor(cell.troops/2), 1);
+                    if (cell.entity == ENTITY_TYPE_ADMIRAL) {
+                        cell.entity = ENTITY_TYPE_SHIP_4;
+                    }
                 };
             });  
         };
@@ -993,6 +1003,7 @@ function update_lobby_info() {
 const express = require('express');
 const app = express();
 const http = require('http');
+const { connect } = require("http2");
 const { emit } = require("process");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
@@ -1012,34 +1023,44 @@ app.get('/', (req, res) => {
 });
 
 class Room {
-    constructor() {
+    constructor(host_id) {
         this.room_id = 'r' + Math.floor(Math.random()*10**8); // use a sufficiently random identifier for the room
         this.game = null;
         this.players = [];
         this.status = 'open';
+        this.host = host_id;
+
+    }
+
+    send_player_list(connected_sockets) {
+        this.players = connected_sockets;
 
     }
 }
+
 io.on('connection', (socket) => {
-    console.log(`user ${socket.id} / ${socket.nickname}  connected`);
+    console.log(`user with socket ${socket.id} connected`);
 
     ////FROM socket_design:
-    mad_log(`user ${socket.nickname} connected`)
+    // mad_log(`user ${socket.nickname} connected`)
     socket.join('lobby');
     // socket.join('global_lobby');
 
-    // socket.emit('client_connected')
-    socket.on('set_name', function(new_name){ // user clicked Create Room
-        socket.nickname = new_name;
-        console.log('set_name to ', socket.nickname)
+    socket.on('login_with_name', function(nickname) {
+        socket.nickname = nickname;
+        mad_log(`${socket.nickname} connected`)
+    } )
 
-        // console.log('current nicknames:')
+    // socket.emit('client_connected')
+    socket.on('change_nickname', function(old_name, new_name){ // user clicked Create Room
+        socket.nickname = new_name;
+        mad_log(`${old_name} changed their name to ${socket.nickname}`)
     });
     
     socket.on('create_room', function(){ // user clicked Create Room
         if(debug_mode){console.log('create_room')}
 
-        let new_room = new Room();
+        let new_room = new Room(socket.id);
         rooms.push(new_room);
        
         socket.join(new_room.room_id); // create new room by joining it
@@ -1293,27 +1314,29 @@ server.listen(PORT, () => {
 
         // Send game info to each activer room
         rooms.forEach(room => {
+            let currently_connected_sockets = io.sockets.adapter.rooms.get(room.room_id);
+            if (currently_connected_sockets) { // if there are any players in the room
+                console.log(currently_connected_sockets.size, 'players in room', room.room_id)
+                //if game is on: 
+                // console.log('Emitting to room ' + room_id)
+                // io.to(room.room_id).emit('tick', game_state(room))
+                if (room.game) {
+                    if (room.game.status == GAME_STATUS_IN_PROGRESS) {
+                        room.game.tick();
+                        room.game.check_for_game_over();       
 
-            //if game is on: 
-            // console.log('Emitting to room ' + room_id)
-            // io.to(room.room_id).emit('tick', game_state(room))
-            if (room.game) {
-                if (room.game.status == GAME_STATUS_IN_PROGRESS) {
-                    room.game.tick();
-                    room.game.check_for_game_over();       
+                        for (let i = 0; i < room.game.players.length; i++) {
+                            if (room.game.players[i].is_human && currently_connected_sockets.has(room.game.players[i].socket_id)) { // if player is still connected
+                                room.game.send_game_state_to(i, 'client_receives_game_state');
+                            };
+                            // io.to(room.players[i].socket_id).emit('tick', room.game.game_state(i));
+                        };                                 
+                    };
 
-                    for (let i = 0; i < room.game.players.length; i++) {
-                        if (room.game.players[i].is_human) {
-                            //todo if player is still connected
-                            // if(io.sockets.adapter.rooms.get(room.room_id)
-                            // io.in(roomID).fetchSockets()
-                            room.game.send_game_state_to(i, 'client_receives_game_state');
-                        };
-                        // io.to(room.players[i].socket_id).emit('tick', room.game.game_state(i));
-                    };                                 
+                } else { // in waiting room
+                    console.log(currently_connected_sockets);
+                    room.send_player_list(currently_connected_sockets);
                 };
-
-                
             };
 
         });

@@ -9,7 +9,7 @@ body {
     right: 0;
     margin: 10;
     padding: 20;
-    outline: thick solid #882288;
+    outline: thick solid #222222;
     z-index: 3;
     background-color: #BBBBBB;
 
@@ -34,7 +34,7 @@ body {
     display: block;
     margin: auto;
     padding: 20;    
-    outline: thick solid #222288;
+    outline: thick solid #222222;
     width: 33%;
     background-color: #BBBBBB;
 }
@@ -43,7 +43,8 @@ body {
     display: block;
     margin: auto;
     padding: 20;    
-    outline: thick solid #882288;
+    /* outline: thick solid #882288; */
+    outline: thick solid #222222;
     width: 33%;
     height: 25%;
     background-color: #BBBBBB;
@@ -53,7 +54,7 @@ body {
     display: block;
     margin: auto;
     padding: 20;    
-    outline: thick solid #228822;
+    /* outline: thick solid #228822; */
     width: 50%;
     background-color: #BBBBBB;
 }
@@ -62,7 +63,7 @@ body {
     float: left;
     width: 33%;
     height: 500px;
-    outline: thick solid #882222;
+    outline: thick solid #222222;
     background-color: #BBBBBB;
 }
 
@@ -72,25 +73,25 @@ body {
     /* display: block;
     margin: 10;
     padding: 20;     */
-    outline: thick solid #882222;
+    /* outline: thick solid #882222; */
     z-index: 2;
 }
 
 
 #table-lobby {
-    outline: thick solid #BBBB22;
+    outline: thick solid #222222;
     margin: 10;
     padding: 20;    
 }
 
 #table-waiting-room-player-list {
-    outline: thick solid #22BBBB;
+    outline: thick solid #222222;
     margin: 10;
     padding: 20;    
 }
 
 #mad-news-div {
-    outline: thick solid #0000FF;
+    outline: thick solid #222222;
     position: fixed;
     display: block;
     top: 50;
@@ -101,7 +102,7 @@ body {
 }
 
 #mad-scoreboard-div {
-    outline: thick solid #4400BB;
+    outline: thick solid #222222;
     position: fixed;
     display: block;
     top: 0;

@@ -301,16 +301,26 @@ function populate_gui() {
         login_form.appendChild(login_button);
 
         login_form.addEventListener('submit', function handleSubmit(event) {
-            let nickname = input_name.value;
-            if(nickname.length > 0) {
-                console.log('Name set to ', nickname);
-                event.preventDefault();
-                socket_local.emit('set_name', nickname);
+            event.preventDefault();
+
+            let new_name = input_name.value;
+            if(new_name.length > 0) {
+                let old_name = localStorage.getItem('nickname');
+
+                if (old_name != null) {
+                    if (new_name != old_name) {
+                        socket_local.emit('change_nickname', old_name, new_name)
+                    }
+                }
+                else {
+                    socket_local.emit('login_with_name', new_name)
+                }
+
                 let p_name = document.getElementById('player_name');
-                p_name.innerHTML = `Playing as ${nickname}`
+                p_name.innerHTML = `Playing as ${new_name}`
                 switch_to_lobby_gui();
             
-                localStorage.setItem("nickname", nickname);
+                localStorage.setItem('nickname', new_name);
 
             };
         });
@@ -382,7 +392,7 @@ function populate_gui() {
             tbl_row.id = `tbl_row_${r}`;
             
             tbl_row.addEventListener('click', function(){
-                console.log('test click on a row', tbl_row.id, r)
+                // console.log('test click on a row', tbl_row.id, r)
                 if (tbl_row.cells[0].innerHTML != '-') {
                     last_clicked_lobby_room_id = tbl_row.cells[0].innerHTML;
                     
@@ -392,8 +402,7 @@ function populate_gui() {
                 }
             });
             tbl_row.addEventListener('dblclick', function(){
-                console.log('test DOUBLE click on a row', tbl_row.id, r)
-                console.log('TODO join room')
+                // console.log('test DOUBLE click on a row', tbl_row.id, r)
                 if (tbl_row.cells[0].innerHTML != '-') {
                     last_clicked_lobby_room_id = tbl_row.cells[0].innerHTML;
                     
@@ -617,7 +626,7 @@ function populate_gui() {
         
         canvas.width = 100;
         canvas.height = 100;
-        canvas.style.border = '10px solid green';
+        canvas.style.border = '10px solid #0E306C'; //high tide color
         canvas.style.position = 'absolute'; 
         // canvas.style.zIndex = "2" //temp -- //"-1"; // set to a low z index to make overlapping elements cover the canvas
         
@@ -666,10 +675,10 @@ function populate_gui() {
     parent_div.appendChild(footer_div);
     parent_div.appendChild(news_div);
 
-    if (localStorage.getItem("nickname") != null) {
+    if (localStorage.getItem('nickname') != null) {
         let nickname = localStorage.getItem("nickname");
         document.getElementById('input_name').value = nickname;
-        socket_local.emit('set_name', nickname);
+        socket_local.emit('login_with_name', nickname);
         let p_name = document.getElementById('player_name');
         p_name.innerHTML = `Playing as ${nickname}`
         switch_to_lobby_gui();
