@@ -332,21 +332,23 @@ class CellClient {
     }   
 
     get_water_color() {
-        if (game_tick_local % 200 > 100) {
-            return CellClient.high_tide_color;
-        }
-        else {
-            return CellClient.low_tide_color;
-        };
+        return CellClient.low_tide_color; // removing tide for now
+        // if (game_tick_local % 200 > 100) {
+        //     return CellClient.high_tide_color;
+        // }
+        // else {
+        //     return CellClient.low_tide_color;
+        // };
     }
 
     get_swamp_color() {
-        if (game_tick_local % 200 > 100) {
-            return CellClient.high_tide_color;
-        }
-        else {
-            return CellClient.swamp_color;
-        };
+        return CellClient.swamp_color; // removing tide for now
+        // if (game_tick_local % 200 > 100) {
+        //     return CellClient.high_tide_color;
+        // }
+        // else {
+        //     return CellClient.swamp_color;
+        // };
     }
 
     draw_cell() {

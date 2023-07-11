@@ -275,6 +275,7 @@ class Game {
                                     this.cells[cell_id_dest].owner = move.queuer;
     
                                     if (this.cells[cell_id_dest].entity == ENTITY_TYPE_ADMIRAL) {
+                                        this.cells[cell_id_dest].entity = ENTITY_TYPE_SHIP_3; // testing change where you don't stack admirals. ship 3 produces an equivalent number of troops.
                                         this.attempt_takeover(old_owner, move.queuer);
                                     };                                
                                 };
@@ -434,7 +435,65 @@ class Game {
         }
     }
     
+    get_parent_node(conn, curPoint) { // used in map_is_fully_connected
+        while (conn[curPoint] !== curPoint) {
+            conn[curPoint] = conn[conn[curPoint]]
+            curPoint = conn[curPoint]
+        }
+        return curPoint
+        }
+
+    cell_is_obstacle(cell) { return cell.terrain === TERRAIN_TYPE_MOUNTAIN } // this may grow to include other terrain features (cracked and broken mountains, land, ...)
+
+    within_map(x, y) { // Returns true if the cell is in bounds
+        return 0 <= x && x < this.num_rows && 0 <= y && y < this.num_cols;
+    }
+
+    map_is_fully_connected(obstacleCount) {
+        // An implementation of a disjoint set union, allowing us to very quickly check whether or not the entire map is traversable
+        const conn = new Array(this.num_rows * this.num_cols).fill().map((_, i) => i);
+        const size = new Array(this.num_rows * this.num_cols).fill(1);
+
+        for (let i = 0; i < this.num_rows; i++) {
+            for (let j = 0; j < this.num_cols; j++) {
+                const cell_id = i * this.num_cols + j;
+                if (!this.cell_is_obstacle(this.cells[cell_id])) {
+                    const curPoint = i * this.num_cols + j;
+                    const neighbors = [
+                        { x: i - 1, y: j },
+                        { x: i, y: j - 1 }
+                    ];
+                    for (const neighbor of neighbors) {
+                        const { x, y } = neighbor;
+                        const neighbor_id = x * this.num_cols + y;
+                        if (this.within_map(x, y) && !this.cell_is_obstacle(this.cells[neighbor_id])) { //if the neighbor is in bounds and is not a mountain
+                            const lastPoint = x * this.num_cols + y;
+                            const curParent = this.get_parent_node(conn, curPoint);
+                            const lastParent = this.get_parent_node(conn, lastPoint);
+                            if (curParent !== lastParent) {
+                                if (size[lastParent] > size[curParent]) {
+                                    conn[curParent] = lastParent;
+                                    size[lastParent] += size[curParent];
+                                } else {
+                                    conn[lastParent] = curParent;
+                                    size[curParent] += size[lastParent];
+                                }
+                            }
+                        }
+                    }
+                }
+                if (size[this.get_parent_node(conn, i * this.num_cols + j)] >= this.num_rows * this.num_cols - obstacleCount) {
+                    return true; // all non-obstacle cells are connected in a single union
+                }
+            }
+        }
+
+        return false; // failed to converge on a single traversable union
+    }
+        
     spawn_terrain(water_weight, mountain_weight, swamp_weight, ship_weight) {
+        let num_mountains = 1; 
+        
         let arr_options = [
             {'value': TERRAIN_TYPE_WATER, 'weight':water_weight},
             {'value': TERRAIN_TYPE_MOUNTAIN, 'weight':mountain_weight},
@@ -450,8 +509,13 @@ class Game {
                     cell.entity = result
                     cell.troops = Math.floor(Math.random()*30)+12
                 } else if (result == TERRAIN_TYPE_MOUNTAIN) {
-                    this.astar_board.cells[cell.id].traversable = false;
-                    cell.terrain = result; //TODO add check if this is a block
+                    cell.terrain = result; // tentatively set it to mountain
+                    if (!this.map_is_fully_connected(num_mountains)) { // if this would create an impasse, remove the mountain
+                        cell.terrain = TERRAIN_TYPE_WATER;
+                    } else {
+                        this.astar_board.cells[cell.id].traversable = false;
+                        num_mountains += 1;
+                    }
                 } else {
                     cell.terrain = result;
                 }
@@ -691,7 +755,15 @@ class HumanPlayer {
     ship_count() {
         let counter = 0;
         this.parent.cells.forEach(cell => {
-            if (cell.owner == this.uid && [ENTITY_TYPE_SHIP, ENTITY_TYPE_SHIP_2, ENTITY_TYPE_SHIP_3,ENTITY_TYPE_SHIP_4].includes(cell.entity)) {counter ++} 
+            // if (cell.owner == this.uid && [ENTITY_TYPE_SHIP, ENTITY_TYPE_SHIP_2, ENTITY_TYPE_SHIP_3,ENTITY_TYPE_SHIP_4].includes(cell.entity)) {counter ++} 
+            if (cell.owner == this.uid) {
+                switch (cell.entity) {
+                    case ENTITY_TYPE_SHIP: counter += 1; break;
+                    case ENTITY_TYPE_SHIP_2: counter += 2; break;
+                    case ENTITY_TYPE_SHIP_3: counter += 3; break;
+                    case ENTITY_TYPE_SHIP_4: counter += 4; break;
+                };
+            };
         });
         return counter
     }
@@ -1365,6 +1437,5 @@ server.listen(PORT, () => {
 
     }, DEFAULT_TICK_SPEED);
 });
-
 
 console.log('gee whiz')
