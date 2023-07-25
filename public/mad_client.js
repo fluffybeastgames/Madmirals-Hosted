@@ -11,6 +11,7 @@ const TERRAIN_TYPE_SWAMP = 104 ;
 const TERRAIN_TYPE_MOUNTAIN = 105;
 const TERRAIN_TYPE_MOUNTAIN_CRACKED = 106;
 const TERRAIN_TYPE_MOUNTAIN_BROKEN = 107;
+const TERRAIN_TYPE_FOG = 108;
 
 const ENTITY_TYPE_ADMIRAL = 200;
 const ENTITY_TYPE_SHIP = 201;
@@ -68,6 +69,10 @@ const DEFAULT_CANVAS_HEIGHT = 50;
 const DEFAULT_FONT_SIZE = 18;
 let font_size = DEFAULT_FONT_SIZE;
 
+const SPRITE_WIDTH = 354; //pixels of each sprite in the sprite sheet
+const SPRITE_HEIGHT = 354; //pixels of each sprite in the sprite sheet
+
+
 const RENDER_REFRESH_TIME = 50; // time in ms to wait after rendering before rendering. Due to how setTimeout works, may be up to 16 ms late
 
 let new_game_overlay_visible = false;
@@ -104,6 +109,8 @@ function game_loop_client() {
     }
     setTimeout( () => { window.requestAnimationFrame(() => game_loop_client()); }, RENDER_REFRESH_TIME) // therefore each game loop will last at least tick_time ms    
 }
+
+
 
 function add_slider(parent_div, id_prefix, display_name, min, max, step, starting_val) {
     let header_p = document.createElement('p');
@@ -314,7 +321,7 @@ class CellClient {
     
     static swamp_color = '#0E735A'
     static high_tide_color = '#0E306C'
-    static low_tide_color = '#2A77E4' //'#1A57C4'
+    static low_tide_color = '#9ae4f1' //'#2A77E4' //'#1A57C4'
     static neutral_entity_color = '#BBBBBB'
     //static hidden_color = '#113366'
     static hidden_color = '#333333'
@@ -363,6 +370,10 @@ class CellClient {
         this.context.lineWidth = 1;
         this.context.strokeRect(this.col*CellClient.width, this.row*CellClient.height, CellClient.width, CellClient.height)
         
+        // if (this.terrain != TERRAIN_TYPE_WATER) { 
+        //     this.draw_sprite(this.terrain);
+        // };
+
         if (this.visible) {
             if (this.terrain == TERRAIN_TYPE_MOUNTAIN) {
                 this.context.fillStyle = CellClient.mountain_color            
@@ -384,7 +395,7 @@ class CellClient {
 
             // this.draw_outline(water_color);
             // if (this.terrain != TERRAIN_TYPE_WATER) { 
-            //     this.draw_sprite(this.terrain);
+            this.draw_sprite(this.terrain);
             // };
 
             // // If there is an admiral here, draw a star to represent it
@@ -395,20 +406,23 @@ class CellClient {
             //     this.draw_sprite(this.entity);
             // };
 
-            // if (this.entity != null) { 
-            //     this.draw_sprite(this.entity);
-            // };
+            if (this.entity != null) { 
+                this.draw_sprite(this.entity);
+            };
             
             this.draw_troops();
-        } 
+        } else {
+            console.log(this.terrain)
+            if(this.terrain == TERRAIN_TYPE_WATER || this.terrain == null) {
+                this.draw_sprite(TERRAIN_TYPE_FOG)
+            }
 
-        if (this.terrain != TERRAIN_TYPE_WATER) { 
-            this.draw_sprite(this.terrain);
-        };
-        if (this.entity != null) { 
-            this.draw_sprite(this.entity);
-        };
-    
+            if (this.entity != null) { 
+                this.draw_sprite(this.entity);
+            };
+        
+        }
+
     }
 
     draw_outline(color) {
@@ -453,49 +467,58 @@ class CellClient {
     
     }
 
-    draw_sprite(entity_or_terrain) {
+    draw_sprite(entity_or_terrain) { //v5
         let sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight; // variable names via the docs https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
         
+        sWidth = SPRITE_WIDTH;
+        sHeight = SPRITE_HEIGHT;
+
         switch (entity_or_terrain) {
             case ENTITY_TYPE_SHIP: 
-                sx = 250; 
+                sx = sWidth*8; 
                 sy = 0;
                 break;
             case ENTITY_TYPE_SHIP_2: 
-                sx = 500; 
+                sx = sWidth*9;
                 sy = 0;
                 break;
             case ENTITY_TYPE_SHIP_3: 
-                sx = 0; 
-                sy = 250;
+                sx = sWidth*10; 
+                sy = 0;
                 break;
             case ENTITY_TYPE_SHIP_4: 
-                sx = 250; 
-                sy = 250;
+                sx = sWidth*11; 
+                sy = 0;
                 break;
             case ENTITY_TYPE_ADMIRAL: 
-                sx = 500; 
-                sy = 250;
+                sx = sWidth*7; 
+                sy = 0;
                 break;
             case TERRAIN_TYPE_MOUNTAIN:
-                sx = 250;
-                sy = 500;
+                sx = sWidth*2;
+                sy = 0;
                 break;
             case TERRAIN_TYPE_SWAMP:
-                sx = 0;
-                sy = 500;
+                sx = sWidth*4;
+                sy = 0;
                 break;                
+            case TERRAIN_TYPE_WATER:
+                sx = sWidth*5;
+                sy = 0;
+                break;               
+            case TERRAIN_TYPE_FOG:
+                sx = sWidth*3;
+                sy = 0;
+                break;   
             
         };
-        
-        sWidth = 250;
-        sHeight = 250;
+    
         dx = this.col*CellClient.width;
         dy = this.row*CellClient.height;
         dWidth = CellClient.width;
         dHeight = CellClient.height;
 
-        this.context.drawImage(sprite_sheet, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+        this.context.drawImage(sprite_sheet, sx, sy, SPRITE_WIDTH, SPRITE_HEIGHT, dx, dy, dWidth, dHeight);
         
     }
 

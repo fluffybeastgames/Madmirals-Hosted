@@ -456,10 +456,13 @@ function populate_gui() {
         game_settings_right.classList.add('mad-game-settings-inner');
         div.appendChild(game_settings_right)
         
-        
+        // Initial values for the game board size - make sure the suggested map size is wider than tall
         let width_or_height_a = Math.floor(Math.random() * 15) + 15 //make sure suggested map size is wider than tall
         let width_or_height_b = Math.floor(Math.random() * 10) + 10
         
+        game_settings_left.appendChild(create_player_list_table());
+
+        //for each numeric game setting, create and append a slider with label and randomized starting value 
         add_slider(game_settings_mid, 'bots', 'Bots', 0, 10, 1, Math.floor(Math.random() * 4) + 1);
         add_slider(game_settings_mid, 'cols', 'Mad Width', 10, 45, 1, Math.max(width_or_height_a, width_or_height_b));
         add_slider(game_settings_mid, 'rows', 'Map Height', 10, 30, 1, Math.min(width_or_height_a, width_or_height_b));
@@ -527,6 +530,14 @@ function populate_gui() {
         
         return div;
     }
+    function create_player_list_table() {
+        let tbl = document.createElement('table')
+        tbl.id = 'table-player-list';
+        
+        tbl.classList.add('mad-player-list');
+        return tbl;
+    }
+
     function get_new_game_settings() {
         let game_data = {
             n_rows: document.getElementById('rows_range').value,
@@ -693,7 +704,7 @@ function populate_gui() {
 
 function x() {
     sprite_sheet = new Image();
-    sprite_sheet.src = './img/sprites3.png';
+    sprite_sheet.src = './img/sprites6.png';
     
     
     window.requestAnimationFrame(() => game_loop_client()); // start the game loop
