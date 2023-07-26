@@ -283,9 +283,10 @@ class Game {
     
                             if (this.cells[cell_id_dest].owner == move.queuer) { //either we owned it already or it was just taken over
                                 //If we are trying to MOVE_ALL a ship, run a check on the appropriate logic (unload troops, move ship, or combine ships)
-                                if([ENTITY_TYPE_SHIP, ENTITY_TYPE_SHIP_2, ENTITY_TYPE_SHIP_3, ENTITY_TYPE_SHIP_4, ENTITY_TYPE_ADMIRAL].includes(this.cells[cell_id_source].entity) && move.action == ACTION_MOVE_ALL) { //} ) { 
+                                if([ENTITY_TYPE_SHIP, ENTITY_TYPE_SHIP_2, ENTITY_TYPE_SHIP_3, ENTITY_TYPE_SHIP_4].includes(this.cells[cell_id_source].entity) && move.action != ACTION_MOVE_HALF) { //} ) { 
                                     this.try_to_move_ship(cell_id_source, cell_id_dest, move.action);
-                                    
+                                } else if (this.cells[cell_id_source].entity == ENTITY_TYPE_ADMIRAL && move.action == ACTION_MOVE_ALL) { // only move admirals on 'move all'. Unlike normal 'move all', it will still leave a troop behind in its wake
+                                    this.try_to_move_ship(cell_id_source, cell_id_dest, move.action);
                                 };
                             };
                             

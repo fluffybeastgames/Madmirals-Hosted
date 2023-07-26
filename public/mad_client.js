@@ -65,8 +65,8 @@ const MAX_SCALE = 50;
 const DEFAULT_ZOOM = 30;
 let zoom_scale = DEFAULT_ZOOM; // for scroll wheel zooming
 
-const DEFAULT_CANVAS_WIDTH = 50;
-const DEFAULT_CANVAS_HEIGHT = 50;
+const DEFAULT_CANVAS_WIDTH = 100;
+const DEFAULT_CANVAS_HEIGHT = 100;
 const DEFAULT_FONT_SIZE = 18;
 let font_size = DEFAULT_FONT_SIZE;
 
@@ -322,7 +322,7 @@ class CellClient {
     
     static swamp_color = '#0E735A'
     static high_tide_color = '#0E306C'
-    static low_tide_color = '#9ae4f1' //'#2A77E4' //'#1A57C4'
+    static low_tide_color = '#0E306C' //'#9ae4f1' //'#2A77E4' //'#1A57C4'
     static neutral_entity_color = '#BBBBBB'
     //static hidden_color = '#113366'
     static hidden_color = '#333333'
@@ -366,7 +366,6 @@ class CellClient {
         let water_color = this.get_water_color(); // different at low and hide tide
         let swamp_color = this.get_swamp_color(); // different at low and hide tide
         
-        
         // this.context.strokeStyle = CellClient.grid_color;
         this.context.strokeStyle = CellClient.grid_color;
         this.context.lineWidth = 1;
@@ -395,38 +394,19 @@ class CellClient {
                 this.context.fillRect(this.col*CellClient.width+1, this.row*CellClient.height+1, CellClient.width-2, CellClient.height-2)
             } 
 
-            // this.draw_outline(water_color);
-            // if (this.terrain != TERRAIN_TYPE_WATER) { 
             this.draw_sprite(this.terrain);
-            // };
-
-            // // If there is an admiral here, draw a star to represent it
-            // if (this.entity == ENTITY_TYPE_ADMIRAL ) { //&& false) {
-            //     this.draw_star(5);
-            // }
-            // } else if (this.entity != null) { 
-            //     this.draw_sprite(this.entity);
-            // };
 
             if (this.entity != null) { 
                 this.draw_sprite(this.entity);
             };
             
             this.draw_troops();
-        } else {
-            console.log(this.terrain)
-
-            
+        } else {            
             if(this.terrain == TERRAIN_TYPE_WATER || this.terrain == null) {
                 this.draw_sprite(TERRAIN_TYPE_FOG)
             } else {
                 this.draw_sprite(TERRAIN_TYPE_CONCEALED); 
-            }
-
-            // if (this.entity != null) { 
-            //     this.draw_sprite(TERRAIN_TYPE_CONCEALED);
-            // };
-        
+            }        
         }
 
     }
@@ -744,7 +724,7 @@ function canvas_mouse_handler(event) {
         } else { // if game is over, clicking anywhere will return to the lobby
             console.log('game over, clicking anywhere will return to the lobby')
             socket_local.emit('return_to_lobby');
-            switch_to_lobby_gui();
+            switch_to_waiting_room_gui();
         }
 
     }
