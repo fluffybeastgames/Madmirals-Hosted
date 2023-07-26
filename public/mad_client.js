@@ -322,7 +322,7 @@ class CellClient {
     
     static swamp_color = '#0E735A'
     static high_tide_color = '#0E306C'
-    static low_tide_color = '#0E306C' //'#9ae4f1' //'#2A77E4' //'#1A57C4'
+    static low_tide_color = '#9ae4f1' //'#2A77E4' //'#1A57C4'
     static neutral_entity_color = '#BBBBBB'
     //static hidden_color = '#113366'
     static hidden_color = '#333333'
