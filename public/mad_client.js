@@ -12,6 +12,7 @@ const TERRAIN_TYPE_MOUNTAIN = 105;
 const TERRAIN_TYPE_MOUNTAIN_CRACKED = 106;
 const TERRAIN_TYPE_MOUNTAIN_BROKEN = 107;
 const TERRAIN_TYPE_FOG = 108;
+const TERRAIN_TYPE_CONCEALED = 109;
 
 const ENTITY_TYPE_ADMIRAL = 200;
 const ENTITY_TYPE_SHIP = 201;
@@ -60,8 +61,8 @@ let move_mode; // values are defined in the ACTION_MOVE_ constants
 let sprite_sheet; //graphical goodness
 
 const MIN_SCALE = 1;
-const MAX_SCALE = 15;
-const DEFAULT_ZOOM = 4;
+const MAX_SCALE = 50;
+const DEFAULT_ZOOM = 30;
 let zoom_scale = DEFAULT_ZOOM; // for scroll wheel zooming
 
 const DEFAULT_CANVAS_WIDTH = 50;
@@ -366,6 +367,7 @@ class CellClient {
         let swamp_color = this.get_swamp_color(); // different at low and hide tide
         
         
+        // this.context.strokeStyle = CellClient.grid_color;
         this.context.strokeStyle = CellClient.grid_color;
         this.context.lineWidth = 1;
         this.context.strokeRect(this.col*CellClient.width, this.row*CellClient.height, CellClient.width, CellClient.height)
@@ -375,10 +377,10 @@ class CellClient {
         // };
 
         if (this.visible) {
-            if (this.terrain == TERRAIN_TYPE_MOUNTAIN) {
-                this.context.fillStyle = CellClient.mountain_color            
-                this.context.fillRect(this.col*CellClient.width, this.row*CellClient.height, CellClient.width, CellClient.height)
-            } else if (this.terrain == TERRAIN_TYPE_SWAMP) {
+            // if (this.terrain == TERRAIN_TYPE_MOUNTAIN) {
+            //     this.context.fillStyle = CellClient.mountain_color            
+            //     this.context.fillRect(this.col*CellClient.width, this.row*CellClient.height, CellClient.width, CellClient.height)
+            if (this.terrain == TERRAIN_TYPE_SWAMP) {
                 this.context.fillStyle = swamp_color         
                 this.context.fillRect(this.col*CellClient.width, this.row*CellClient.height, CellClient.width, CellClient.height)
             } else {
@@ -413,13 +415,17 @@ class CellClient {
             this.draw_troops();
         } else {
             console.log(this.terrain)
+
+            
             if(this.terrain == TERRAIN_TYPE_WATER || this.terrain == null) {
                 this.draw_sprite(TERRAIN_TYPE_FOG)
+            } else {
+                this.draw_sprite(TERRAIN_TYPE_CONCEALED); 
             }
 
-            if (this.entity != null) { 
-                this.draw_sprite(this.entity);
-            };
+            // if (this.entity != null) { 
+            //     this.draw_sprite(TERRAIN_TYPE_CONCEALED);
+            // };
         
         }
 
@@ -475,42 +481,49 @@ class CellClient {
 
         switch (entity_or_terrain) {
             case ENTITY_TYPE_SHIP: 
-                sx = sWidth*8; 
-                sy = 0;
-                break;
-            case ENTITY_TYPE_SHIP_2: 
-                sx = sWidth*9;
-                sy = 0;
-                break;
-            case ENTITY_TYPE_SHIP_3: 
-                sx = sWidth*10; 
-                sy = 0;
-                break;
-            case ENTITY_TYPE_SHIP_4: 
-                sx = sWidth*11; 
-                sy = 0;
-                break;
-            case ENTITY_TYPE_ADMIRAL: 
                 sx = sWidth*7; 
                 sy = 0;
                 break;
+            case ENTITY_TYPE_SHIP_2: 
+                sx = sWidth*8;
+                sy = 0;
+                break;
+            case ENTITY_TYPE_SHIP_3: 
+                sx = sWidth*9; 
+                sy = 0;
+                break;
+            case ENTITY_TYPE_SHIP_4: 
+                sx = sWidth*10; 
+                sy = 0;
+                break;
+            case ENTITY_TYPE_ADMIRAL: 
+                sx = sWidth*5; 
+                sy = 0;
+                break;
             case TERRAIN_TYPE_MOUNTAIN:
-                sx = sWidth*2;
+                sx = sWidth*1;
                 sy = 0;
                 break;
             case TERRAIN_TYPE_SWAMP:
-                sx = sWidth*4;
+                sx = sWidth*3;
                 sy = 0;
                 break;                
             case TERRAIN_TYPE_WATER:
-                sx = sWidth*5;
+                sx = sWidth*4;
                 sy = 0;
                 break;               
             case TERRAIN_TYPE_FOG:
-                sx = sWidth*3;
+                sx = sWidth*2;
                 sy = 0;
                 break;   
-            
+            case null:
+                sx = sWidth*4;
+                sy = 0;
+                break;
+            case TERRAIN_TYPE_CONCEALED:
+                sx = sWidth*11;
+                sy = 0;
+                break;
         };
     
         dx = this.col*CellClient.width;
@@ -631,7 +644,7 @@ function render_board() {
     let canvas = document.getElementById('canvas');
     let context = canvas.getContext('2d');
 
-    context.fillStyle=CellClient.hidden_color  
+    context.fillStyle= CellClient.low_tide_color;  
     context.fillRect(0, 0, canvas.width, canvas.height); // Clear the board
     
     // Draw each gridline and object on the canvas

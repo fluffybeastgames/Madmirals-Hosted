@@ -704,7 +704,7 @@ function populate_gui() {
 
 function x() {
     sprite_sheet = new Image();
-    sprite_sheet.src = './img/sprites6.png';
+    sprite_sheet.src = './img/sprites7.png';
     
     
     window.requestAnimationFrame(() => game_loop_client()); // start the game loop
