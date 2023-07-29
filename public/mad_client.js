@@ -67,7 +67,7 @@ let zoom_scale = DEFAULT_ZOOM; // for scroll wheel zooming
 
 const DEFAULT_CANVAS_WIDTH = 100;
 const DEFAULT_CANVAS_HEIGHT = 100;
-const DEFAULT_FONT_SIZE = 18;
+const DEFAULT_FONT_SIZE = 48;
 let font_size = DEFAULT_FONT_SIZE;
 
 const SPRITE_WIDTH = 354; //pixels of each sprite in the sprite sheet
@@ -402,6 +402,9 @@ class CellClient {
             
             this.draw_troops();
         } else {            
+            // this.context.fillStyle = CellClient.hidden_color            
+            // this.context.fillRect(this.col*CellClient.width, this.row*CellClient.height, CellClient.width, CellClient.height)    
+
             if(this.terrain == TERRAIN_TYPE_WATER || this.terrain == null) {
                 this.draw_sprite(TERRAIN_TYPE_FOG)
             } else {
@@ -545,11 +548,16 @@ class CellClient {
         let y = this.row*CellClient.height + CellClient.height/2;
         // Add the number of troops (if any)
         if (this.troops != 0) {
-            this.context.font = `${font_size}px Comic Sans MS`;
+            this.context.font = `${font_size}px Impact`;
             this.context.fillStyle = '#FFFFFF';
             this.context.textBaseline = 'middle';
             this.context.textAlign = 'center';
+            // this.context.fillText(this.troops, x, y, CellClient.width); //limit the width to the size of the cell, squeezing text if need be
+
             this.context.fillText(this.troops, x, y, CellClient.width); //limit the width to the size of the cell, squeezing text if need be
+            
+            // this.context.strokeWidth = 5;
+            this.context.strokeText(this.troops, x, y, CellClient.width); //limit the width to the size of the cell, squeezing text if need be
         }
         
     }
@@ -722,7 +730,7 @@ function canvas_mouse_handler(event) {
                 move_mode = ACTION_MOVE_HALF; 
             };
         } else { // if game is over, clicking anywhere will return to the lobby
-            console.log('game over, clicking anywhere will return to the lobby')
+            console.log('Game Over! click anywhere to return to the lobby')
             socket_local.emit('return_to_lobby');
             switch_to_waiting_room_gui();
         }
@@ -783,6 +791,11 @@ function select_cell_at(x, y) { // returns true if the active cell changed, and 
     col = Math.floor(x/CellClient.width)
     // console.log(`Selecting cell ${row},${col}`)
     let selection_changed = active_cell[0] != row || active_cell[1] != col;
+
+    //if the user clicked on a cell that is adjacent to the active cell, then move the active cell to the new cell according to the move mode
+    if (selection_changed && (Math.abs(active_cell[0] - row) + Math.abs(active_cell[1] - col) == 1)) {
+        add_to_queue(active_cell[0], active_cell[1], row, col, 'none')
+    }
 
     active_cell[0] = row;
     active_cell[1] = col;

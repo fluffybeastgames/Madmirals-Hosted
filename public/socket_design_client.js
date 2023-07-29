@@ -12,7 +12,6 @@ let game_state_data; // info that persists for one turn
 
 let socket_local = io();
 
-
 socket_local.on('mad_log', function(msg) {
     console.log('From server: ' + msg);
     document.getElementById('socket_log').innerHTML = document.getElementById('socket_log').innerHTML + '<br>' + msg 
@@ -22,7 +21,6 @@ socket_local.on('tick', function(msg) {
     console.log('tick')
     console.log(msg)
 } );
-
 
 socket_local.on('client_joined_room', function(room_id) {
     console.log('client_joined_room')
@@ -37,25 +35,55 @@ socket_local.on('client_joined_room', function(room_id) {
     // Table w/ list of bots? or just a dropdown or slider or to select number of bots?
     // Game input controls - visible to all players, only editable by host, with shuffle button to randomize
 
+
+
     switch_to_waiting_room_gui()
 
+});
+
+socket_local.on('client_created_room', function(room_id, user_nick) {
+    console.log('client_created_room')
+    active_room_id = room_id;
+    document.getElementById('waiting_room_id').innerHTML = `Room: ${room_id}`
+
+    // let tbl = document.getElementById('table-players-in-room');
+    // let tbl_row = document.createElement('tr');
+    // tbl_row.id = `tbl_row_${user_nick}`;
+    // tbl_row.innerHTML = `<td>${user_nick}</td><td>*</td><td>Ready</td>`;
+    // tbl.appendChild(tbl_row);
+    
+    switch_to_waiting_room_gui()
 });
 
 socket_local.on('a_user_joined_the_room', function(user_id) {
     console.log('a_user_joined_the_room', user_id)
     document.getElementById('socket_log').innerHTML = document.getElementById('socket_log').innerHTML + '<br>' + user_id + ' joined the room';
+
+    // //update the table of players in the room
+    // let tbl = document.getElementById('table-players-in-room');
+    // let tbl_row = document.createElement('tr');
+    // tbl_row.id = `tbl_row_${user_id}`;
+    // tbl_row.innerHTML = `<td>${user_id}</td><td></td><td>Ready</td>`;
+    // tbl.appendChild(tbl_row);
+    
 });
 
 socket_local.on('a_user_left_the_room', function(user_id) {
     console.log('a_user_left_the_room', user_id)
     document.getElementById('socket_log').innerHTML = document.getElementById('socket_log').innerHTML + '<br>' + user_id + ' left the room';
+
+    //update the table of players in the room
+    let tbl = document.getElementById('table-players-in-room');
+    let tbl_row = document.getElementById(`tbl_row_${user_id}`);
+    tbl.removeChild(tbl_row);
+
 });
 
 
 socket_local.on('lobby_info', function(list_rooms, players_in_lobby, players_online) {
     document.getElementById('players_online').innerHTML = `Players Online: ${players_online}`
     
-    
+    // console.log(`players in lobby: ${players_in_lobby}`)
     let lobby_table = document.getElementById('table-lobby');
 
     // var myTable = document.getElementById('myTable');
@@ -112,6 +140,56 @@ socket_local.on('client_receives_game_state', function(game_state_string){
     client_receives_game_state_here(game_state_string);
 });
 
+socket_local.on('receive_updated_room_settings', function(game_data_json){
+    console.log('HERE I RECEIVE!');
+    let game_data = JSON.parse(game_data_json);
+    console.log(game_data);
+    document.getElementById('rows_range').value = game_data.n_rows;
+    document.getElementById(`${id_prefix}_label`).innerHTML = `${slider_range.value}`;
+    
+    document.getElementById('cols_range').value = game_data.n_cols;
+    document.getElementById('bots_range').value = game_data.n_bots;
+    document.getElementById('mountains_range').value = game_data.mountain_weight;
+    document.getElementById('ships_range').value = game_data.ship_weight;
+    document.getElementById('swamps_range').value = game_data.swamp_weight;
+    document.getElementById('radio_fog_on').checked = game_data.fog_of_war;
+    document.getElementById('radio_fog_off').checked = !game_data.fog_of_war;
+
+});
+
+socket_local.on('update_player_list', function(connected_sockets) {
+    console.log(connected_sockets)
+    let tbl = document.getElementById('table-players-in-room');
+
+
+    // let currently_connected_sockets = io.sockets.adapter.rooms.get(room.room_id);
+    for(let r = 0; r < 10; r++) { //janky magic number - 10 rows in the table of players in the room for now.. TODO
+        let tbl_row = document.getElementById(`tbl_players_row_${r}`);
+        tbl_row.innerHTML = `<td>-</td><td>-</td><td>-</td>`;
+    }
+    let i = 0;
+    connected_sockets.forEach(nickname => {
+        let ready = 'Ready'; //TODO
+        let host = i==0 ? '*' : ''; //player who has been here longest is host. for now.
+
+        let tbl_row = document.getElementById(`tbl_players_row_${i}`);
+        tbl_row.innerHTML = `<td>${nickname}</td><td>${host}</td><td>${ready}</td>`;
+        i++;
+    });
+    
+
+});
+
+// let player_socket_ids = io.sockets.adapter.rooms.get(room_id);
+// add_humans(player_socket_ids, human_colors) {
+//     let i = 0;
+//     player_socket_ids.forEach(socket_id => {
+//         let sock = io.sockets.sockets.get(socket_id);
+//         let nickname = sock.nickname;
+//         this.add_human(socket_id, nickname, human_colors[i]);
+//         i++;
+//     });
+// }
 
 function client_receives_game_state_here(game_state_string) {
     // console.log(game_state_string)
@@ -507,6 +585,9 @@ function populate_gui() {
         btn_toggle_ready.innerText = 'Toggle Ready';
         btn_toggle_ready.addEventListener('click', function(){
             socket_local.emit('toggle_ready', active_room_id)
+            send_waiting_room_game_settings(); //TEMP TEST
+            let game_data_json = get_new_game_settings();
+            socket_local.emit('send_updated_room_settings', active_room_id, game_data_json)            
         });        
         
         let btn_start_game = document.createElement('button');
@@ -531,11 +612,41 @@ function populate_gui() {
         return div;
     }
     function create_player_list_table() {
-        let tbl = document.createElement('table')
-        tbl.id = 'table-player-list';
+        let tbl_player_list = document.createElement('table')
+        tbl_player_list.id = 'table-players-in-room';
+        tbl_player_list.classList.add('table-players-in-room');
         
-        tbl.classList.add('mad-player-list');
-        return tbl;
+        // Create table header row
+        let tbl_tr = document.createElement('tr');
+        let keys = ['Name', 'Host', 'Status']
+        for (let key of keys) {
+            let tabl_th = document.createElement('th');
+            tabl_th.textContent = key;
+            tbl_tr.appendChild(tabl_th);
+        }
+        tbl_player_list.appendChild(tbl_tr);
+        
+        let n_rows = 10; //for max of 10 players.. this is janky. TODO
+        for(let r = 0; r < n_rows; r++) {
+            let tbl_row = document.createElement('tr');
+            tbl_row.id = `tbl_players_row_${r}`
+            tbl_player_list.appendChild(tbl_row)
+        }
+        
+
+        return tbl_player_list;
+    }
+
+    function send_waiting_room_update(field_name, value) {
+        let n = document.getElementById(field_name).value
+        socket_local.emit('send_game_settings_preview', active_room_id, game_data_json)
+    }
+
+    function send_waiting_room_game_settings() {
+    //call this from the host when the game settings are changed
+        let game_data_json = get_new_game_settings(); 
+        socket_local.emit('send_game_settings_preview', active_room_id, game_data_json)
+
     }
 
     function get_new_game_settings() {
@@ -548,12 +659,13 @@ function populate_gui() {
             water_weight:100, // MAGIC NUMBER
             mountain_weight:Number(document.getElementById('mountains_range').value),
             ship_weight:Number(document.getElementById('ships_range').value),
-            swamp_weight:Number(document.getElementById('swamps_range').value)
+            swamp_weight:Number(document.getElementById('swamps_range').value),
+
         };
         
         return JSON.stringify(game_data)
     }
-
+    
     function get_chat_div() {
         let div = document.createElement('div');
         div.id = 'mad-chat-div';

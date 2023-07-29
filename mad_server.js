@@ -51,6 +51,10 @@ const MIN_DISTANCE_ADMIRALS = 5;
 
 const DEFAULT_TICK_SPEED = 500;
 
+// function init_new_game(room_id) {
+//     //creates a blank game in INIT mode. Can hold the settings of the lobby
+//     let new_game = new Game(room_id);
+// }
 function start_new_game(room_id, game_data_json) {
     console.log('i am start_new_game')
     let game_data = JSON.parse(game_data_json)
@@ -58,11 +62,13 @@ function start_new_game(room_id, game_data_json) {
     let player_socket_ids = io.sockets.adapter.rooms.get(room_id);
 
     let new_game = new Game(room_id, game_data, player_socket_ids);
+    //let new_game;
 
     const i = rooms.findIndex(e => e.room_id === room_id); 
     if (i > -1) {//rooms[i] contains the room object with id room_to_join
         rooms[i].game = new_game;
-        console.log('game added to room ', room_id)
+        new_game.start_game();
+        console.log('game started in room ', room_id)
     }
     return new_game;
     // console.log(rooms[i].game.num_rows, rooms[i].game.num_cols, rooms[i].game.players.length);
@@ -70,7 +76,6 @@ function start_new_game(room_id, game_data_json) {
 
 
 class Game {
-    // game = new Game(n_rows, n_cols, fog_of_war, 1, human_player_info, num_bots, starting_troops, water_weight, mountain_weight, swamp_weight, ship_weight);
     constructor(room_id, game_data, player_socket_ids) {
         this.room_id = room_id;
         this.game_id = 'g' + Math.floor(Math.random()*10**16); // TODO possibly temp - make into the room id of the lobby that created this game?
@@ -121,10 +126,66 @@ class Game {
         this.spawn_terrain(water_weight, mountain_weight, swamp_weight, ship_weight);
         console.log('terrain has been spawned')
 
+
+
+
+    // game = new Game(n_rows, n_cols, fog_of_war, 1, human_player_info, num_bots, starting_troops, water_weight, mountain_weight, swamp_weight, ship_weight);
+    // constructor(room_id, game_data, player_socket_ids) {
+    //     this.room_id = room_id;
+    //     this.game_id = 'g' + Math.floor(Math.random()*10**16); // TODO possibly temp - make into the room id of the lobby that created this game?
+        
+    //     console.log('game_id', this.game_id)
+
+    //     this.players = []
+    //     this.player_turn_order = []
+    //     this.status = GAME_STATUS_INIT
+    //     this.game_on = false; // when game_on, the game will loop every ~tick_speed ms, increasing the game_tick and advancing the simulation
+        
+    //     // For each possible game setting, use the json input value, if present, and default to random/default values
+    //     this.fog_of_war = 'fog_of_war' in game_data? game_data.fog_of_war : Math.random() > .19;
+    //     this.num_rows = 'n_rows' in game_data ? game_data.n_rows : 15 + Math.floor(Math.random()*15);
+    //     this.num_cols =  'n_cols' in game_data? game_data.n_cols : 15 + Math.floor(Math.random()*25);
+    //     this.cells = []; // will hold an array Cell objects. This will become the server-side all-knowing set of cells
+    //     this.initialize_cells();
+    //     this.astar_board = new path_finder.ABoard(this.num_rows, this.num_cols, 0); // used for determining the shortest traversable distance between two cells
+    //     this.astar = new path_finder.AStar(this.astar_board);
+    //     this.game_tick_server = -1;
+    //     this.tick_speed = DEFAULT_TICK_SPEED; // ms to wait before rendering each new frame
+
+    //     let player_color_options = ['#C50F1F', '#C19C00', '#881798', '#E74856', '#16C60C', '#F9A1A5', '#B4009E', '#61D6D6', '#2222F2', '#8C8C8C', '#B9B165',
+    //                                 '#FF0000', '#FF8000', '#00FF00', '#FF00FF'];  
+    //     player_color_options = player_color_options.sort((a, b) => 0.5 - Math.random()); // loosely shuffled array of colors to assign to players
+
+    //     let n_bots = 'n_bots' in game_data ? game_data.n_bots : Math.floor(Math.random()*4) + 1;; // get the number of bots to add to the game
+    //     //allow 0 b
+    //     let n_humans = player_socket_ids.length;
+    //     if (n_humans < 2) {
+    //         n_bots = Math.max(n_bots, 1); // if there is only one human player, make sure there is at least one bot
+    //     }
+        
+    //     this.add_bots(n_bots, player_color_options.slice(0, n_bots));
+
+    //     console.log('n_bots', n_bots);
+
+    //     this.add_humans(player_socket_ids, player_color_options.slice(n_bots));
+    
+    //     this.spawn_admirals(25); // create an admiral entity for each player, param is the number of troops they start with
+    //     console.log('admirals have been placed')
+
+    //     let water_weight = 'water_weight' in game_data ? game_data.water_weight : 10 + Math.random();
+    //     let mountain_weight = 'mountain_weight' in game_data ? game_data.mountain_weight : 1 + Math.random();
+    //     let swamp_weight  = 'swamp_weight' in game_data ? game_data.swamp_weight : .1 + Math.random() / 4 ; 
+    //     let ship_weight = 'ship_weight' in game_data ? game_data.ship_weight : .2 + Math.random() / 2;
+    
+    //     this.spawn_terrain(water_weight, mountain_weight, swamp_weight, ship_weight);
+    //     console.log('terrain has been spawned')
+
+
+    }
+
+    start_game() {
         this.status = GAME_STATUS_IN_PROGRESS;
-        this.game_on = true; // start with the simulation running instead of paused
-
-
+        this.game_on = true;
     }
 
     add_humans(player_socket_ids, human_colors) {
@@ -1051,7 +1112,10 @@ function mad_log(msg) {
     
 }
 
-
+function update_room_info() {
+    // updates the list of players in the room, the designated host, and the current values of the game settings
+    // let room_info = {'players':[], 'host':'', 'game_mode':'', 'map_size':'', 'fog_of_war':'', 'game_speed':''}
+}
 
 function update_lobby_info() {
 // Updates the list of active rooms and returns a list of currently open rooms and their statuses
@@ -1063,7 +1127,7 @@ function update_lobby_info() {
         if(g_room) {
             let players = g_room.size
         
-            let room_row = {'room_id':room.room_id, 'game_mode':'Free For All', 'players':`${players}/8`, 'bots':'2','status':'Open'}
+            let room_row = {'room_id':room.room_id, 'game_mode':'Free For All', 'players':`${players}`, 'bots':'2','status':'Open'}
             list_open_rooms.push(room_row)
         }
 
@@ -1098,17 +1162,28 @@ app.get('/', (req, res) => {
 class Room {
     constructor(host_id) {
         this.room_id = 'r' + Math.floor(Math.random()*10**8); // use a sufficiently random identifier for the room
-        this.game = null;
+        this.game = new Game(this.room_id, {}, []);
         this.players = [];
         this.status = 'open';
         this.host = host_id;
 
     }
 
-    send_player_list(connected_sockets) {
-        this.players = connected_sockets;
+}
 
-    }
+
+function send_player_list(room_id) {
+    let player_socket_ids = io.sockets.adapter.rooms.get(room_id);
+    let i = 0;
+    let list_players = [];
+    player_socket_ids.forEach(socket_id => {
+        let sock = io.sockets.sockets.get(socket_id);
+        let nickname = sock.nickname;
+        list_players.push(nickname)
+        i++;
+    });
+    io.to(room_id).emit('update_player_list', list_players);
+
 }
 
 io.on('connection', (socket) => {
@@ -1137,7 +1212,8 @@ io.on('connection', (socket) => {
         rooms.push(new_room);
        
         socket.join(new_room.room_id); // create new room by joining it
-        io.to(socket.id).emit('client_joined_room', new_room.room_id)
+        io.to(socket.id).emit('client_created_room', new_room.room_id)
+        socket.to(new_room.room_id).emit('a_user_joined_the_room', socket.nickname)
     });
 
     socket.on('join_game_room', function(room_to_join){ // user clicked Join Room (while a valid room is selected?)
@@ -1185,6 +1261,14 @@ io.on('connection', (socket) => {
 
         // io.to(room_id).emit('tell_client_game_has_started', game_info)
     });
+
+    socket.on('send_updated_room_settings', function(room_id, game_data_json) {
+        console.log('HEREHERE!!!!');
+        console.log(room_id);
+        console.log(game_data_json);
+        socket.to(room_id).emit('receive_updated_room_settings', game_data_json);
+//HEREHERE
+    })
 
     socket.on('add_move_to_queue', function(){ //
         if(debug_mode){console.log('add_move_to_queue')}
@@ -1349,6 +1433,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log(`user ${socket.id} disconnected`);
+        mad_log(`${socket.nickname} disconnected`)
         // if the user was in a game, remove them from the game broadcasts
         // if there are no more users in the broadcast, end the game
 
@@ -1404,11 +1489,14 @@ server.listen(PORT, () => {
                             };
                             // io.to(room.players[i].socket_id).emit('tick', room.game.game_state(i));
                         };                                 
+                    } else if (room.game.status == GAME_STATUS_INIT) {
+                        // console.log(currently_connected_sockets)
+                        send_player_list(room.room_id);
                     };
 
-                } else { // in waiting room
-                    console.log(currently_connected_sockets);
-                    room.send_player_list(currently_connected_sockets);
+
+                } else { // in waiting room without a game - should no longer be accessible
+
                 };
             };
 
