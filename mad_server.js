@@ -98,8 +98,9 @@ class Game {
         this.game_tick_server = -1;
         this.tick_speed = DEFAULT_TICK_SPEED; // ms to wait before rendering each new frame
 
-        let player_color_options = ['#C50F1F', '#C19C00', '#881798', '#E74856', '#16C60C', '#F9A1A5', '#B4009E', '#61D6D6', '#2222F2', '#8C8C8C', '#B9B165',
-                                    '#FF0000', '#FF8000', '#00FF00', '#FF00FF'];  
+        // let player_color_options = ['#C50F1F', '#C19C00', '#881798', '#E74856', '#16C60C', '#F9A1A5', '#B4009E', '#61D6D6', '#2222F2', '#8C8C8C', '#B9B165',
+        //                             '#FF0000', '#FF8000', '#00FF00', '#FF00FF'];  
+        let player_color_options = ['#48b393', '#d4a70e', '#e7843e', '#3980d7', '#90c55d', '#bb6307', '#ec6363', '#3a537c', '#7c8c3a', '#c63939', '#d65084', '#6765ae', '#486b27', '#7b2525', '#a467c8', '#643b8b'];
         player_color_options = player_color_options.sort((a, b) => 0.5 - Math.random()); // loosely shuffled array of colors to assign to players
 
         let n_bots = 'n_bots' in game_data ? game_data.n_bots : Math.floor(Math.random()*4) + 1;; // get the number of bots to add to the game
@@ -115,7 +116,7 @@ class Game {
 
         this.add_humans(player_socket_ids, player_color_options.slice(n_bots));
     
-        this.spawn_admirals(25); // create an admiral entity for each player, param is the number of troops they start with
+        this.spawn_admirals(0); // create an admiral entity for each player, param is the number of troops they start with
         console.log('admirals have been placed')
 
         let water_weight = 'water_weight' in game_data ? game_data.water_weight : 10 + Math.random();
@@ -310,9 +311,9 @@ class Game {
                                 troops_to_move =  this.cells[cell_id_source].troops - 1 ;
                             } else if (move.action == ACTION_MOVE_ALL) { 
                                 //if (this.cells[cell_id_source].entity != ENTITY_TYPE_ADMIRAL && this.cells[cell_id_source].entity != ENTITY_TYPE_SHIP) {
-                                    if (this.cells[cell_id_source].entity != ENTITY_TYPE_ADMIRAL) {
+                                if (this.cells[cell_id_source].entity != ENTITY_TYPE_ADMIRAL) {
                                     troops_to_move = this.cells[cell_id_source].troops;
-                                } else {troops_to_move = this.cells[cell_id_source].troops - 1;}
+                                } else {troops_to_move = Math.floor(this.cells[cell_id_source].troops/2)}; // restrict the admirals to only moving half their troops at a time
                                 
                             } else { //right click
                                 troops_to_move =  Math.floor(this.cells[cell_id_source].troops/2);
@@ -433,7 +434,7 @@ class Game {
                     break;                    
             };    
             
-        } else if (action ==ACTION_MOVE_ALL) { // instead of abandoning ship, leave one troop behind
+        } else if (action == ACTION_MOVE_ALL) { // instead of abandoning ship, leave one troop behind
             this.cells[cell_id_source].troops += 1
         };
             
@@ -1169,22 +1170,28 @@ class Room {
 
     }
 
+    get_host() {
+        return this.host;
+    }
+    
+    send_player_list() {
+        let player_socket_ids = io.sockets.adapter.rooms.get(this.room_id);
+        let i = 0;
+        let list_players = [];
+        player_socket_ids.forEach(socket_id => {
+            let sock = io.sockets.sockets.get(socket_id);
+            let nickname = sock.nickname;
+            list_players.push(nickname)
+            i++;
+        });
+        io.to(this.room_id).emit('update_player_list', list_players);
+    
+    }
+
 }
 
 
-function send_player_list(room_id) {
-    let player_socket_ids = io.sockets.adapter.rooms.get(room_id);
-    let i = 0;
-    let list_players = [];
-    player_socket_ids.forEach(socket_id => {
-        let sock = io.sockets.sockets.get(socket_id);
-        let nickname = sock.nickname;
-        list_players.push(nickname)
-        i++;
-    });
-    io.to(room_id).emit('update_player_list', list_players);
 
-}
 
 io.on('connection', (socket) => {
     console.log(`user with socket ${socket.id} connected`);
@@ -1491,7 +1498,7 @@ server.listen(PORT, () => {
                         };                                 
                     } else if (room.game.status == GAME_STATUS_INIT) {
                         // console.log(currently_connected_sockets)
-                        send_player_list(room.room_id);
+                        room.send_player_list();
                     };
 
 

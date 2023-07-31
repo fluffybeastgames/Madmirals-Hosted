@@ -322,10 +322,10 @@ class CellClient {
     
     static swamp_color = '#0E735A'
     static high_tide_color = '#0E306C'
-    static low_tide_color = '#9ae4f1' //'#2A77E4' //'#1A57C4'
+    static low_tide_color =  '#c3f3fc' //'#9ae4f1' //'#2A77E4' //'#1A57C4'
     static neutral_entity_color = '#BBBBBB'
     //static hidden_color = '#113366'
-    static hidden_color = '#333333'
+    static hidden_color = '#DDDDDD'
             
     constructor(context, id, row, col) {
         this.context = context; // the context of the canvas we'll be drawing to
@@ -402,8 +402,8 @@ class CellClient {
             
             this.draw_troops();
         } else {            
-            // this.context.fillStyle = CellClient.hidden_color            
-            // this.context.fillRect(this.col*CellClient.width, this.row*CellClient.height, CellClient.width, CellClient.height)    
+            this.context.fillStyle = CellClient.hidden_color            
+            this.context.fillRect(this.col*CellClient.width, this.row*CellClient.height, CellClient.width, CellClient.height)    
 
             if(this.terrain == TERRAIN_TYPE_WATER || this.terrain == null) {
                 this.draw_sprite(TERRAIN_TYPE_FOG)
@@ -457,11 +457,11 @@ class CellClient {
     }
 
     draw_sprite(entity_or_terrain) { //v5
-        let sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight; // variable names via the docs https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
+        let sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight, alpha; // variable names via the docs https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
         
         sWidth = SPRITE_WIDTH;
         sHeight = SPRITE_HEIGHT;
-
+        alpha = 1.0; //unless otherwise specified, sprites are fully opaque
         switch (entity_or_terrain) {
             case ENTITY_TYPE_SHIP: 
                 sx = sWidth*7; 
@@ -490,22 +490,27 @@ class CellClient {
             case TERRAIN_TYPE_SWAMP:
                 sx = sWidth*3;
                 sy = 0;
+                alpha = .6;
                 break;                
             case TERRAIN_TYPE_WATER:
                 sx = sWidth*4;
                 sy = 0;
+                alpha = .2;
                 break;               
             case TERRAIN_TYPE_FOG:
                 sx = sWidth*2;
                 sy = 0;
+                alpha = .4;
                 break;   
             case null:
                 sx = sWidth*4;
                 sy = 0;
+                alpha = .2;
                 break;
             case TERRAIN_TYPE_CONCEALED:
                 sx = sWidth*11;
                 sy = 0;
+                alpha = .5;
                 break;
         };
     
@@ -513,9 +518,9 @@ class CellClient {
         dy = this.row*CellClient.height;
         dWidth = CellClient.width;
         dHeight = CellClient.height;
-
+        this.context.globalAlpha = alpha;
         this.context.drawImage(sprite_sheet, sx, sy, SPRITE_WIDTH, SPRITE_HEIGHT, dx, dy, dWidth, dHeight);
-        
+        this.context.globalAlpha = 1.0; //restore to standard opacity
     }
 
     draw_star(num_points=5) { // Draws an n-pointed star within the bounds of the cell, representing an Admiral or ship cell
