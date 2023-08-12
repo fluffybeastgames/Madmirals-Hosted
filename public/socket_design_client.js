@@ -141,12 +141,10 @@ socket_local.on('client_receives_game_state', function(game_state_string){
 });
 
 socket_local.on('receive_updated_room_settings', function(game_data_json){
-    console.log('HERE I RECEIVE!');
+    // console.log('HERE I RECEIVE!');
     let game_data = JSON.parse(game_data_json);
-    console.log(game_data);
+    // console.log(game_data);
     document.getElementById('rows_range').value = game_data.n_rows;
-    document.getElementById(`${id_prefix}_label`).innerHTML = `${slider_range.value}`;
-    
     document.getElementById('cols_range').value = game_data.n_cols;
     document.getElementById('bots_range').value = game_data.n_bots;
     document.getElementById('mountains_range').value = game_data.mountain_weight;
@@ -154,6 +152,13 @@ socket_local.on('receive_updated_room_settings', function(game_data_json){
     document.getElementById('swamps_range').value = game_data.swamp_weight;
     document.getElementById('radio_fog_on').checked = game_data.fog_of_war;
     document.getElementById('radio_fog_off').checked = !game_data.fog_of_war;
+
+    document.getElementById('rows_label').innerHTML = game_data.n_rows;
+    document.getElementById('cols_label').innerHTML = game_data.n_cols;
+    document.getElementById('bots_label').innerHTML = game_data.n_bots;
+    document.getElementById('mountains_label').innerHTML = game_data.mountain_weight;
+    document.getElementById('ships_label').innerHTML = game_data.ship_weight;
+    document.getElementById('swamps_label').innerHTML = game_data.swamp_weight;
 
 });
 
@@ -282,13 +287,15 @@ function switch_to_login_gui() {
 }
 
 function switch_to_waiting_room_gui() {
+    enable_controls_iff_room_host(); // enable/disable controls based on whether the player is the host of the room
+
     document.getElementById('mad-login-div').style.display = 'none';
     document.getElementById('mad-lobby-div').style.display = 'none';
     document.getElementById('mad-waiting-room-div').style.display = 'block';
     document.getElementById('mad-game-div').style.display = 'none';
     document.getElementById('mad-news-div').style.display = 'block';
     document.getElementById('mad-scoreboard-div').style.display = 'none';
-    reset_chat_log();
+    // reset_chat_log();
 }
 
 function switch_to_lobby_gui() {
@@ -298,7 +305,7 @@ function switch_to_lobby_gui() {
     document.getElementById('mad-game-div').style.display = 'none';
     document.getElementById('mad-news-div').style.display = 'block';
     document.getElementById('mad-scoreboard-div').style.display = 'none';
-    reset_chat_log();
+    // reset_chat_log();
     active_room_id = 'lobby';
 }
 
@@ -326,6 +333,10 @@ function send_chat_message(room, msg) {
 socket_local.on('receive_chat_message', function(msg) {
     //console.log('receive_chat_message', sender_id, msg)
     document.getElementById('socket_log').innerHTML = document.getElementById('socket_log').innerHTML + '<br>' + msg
+    // document.getElementById('socket_log').scrollTo(0, document.getElementById('socket_log').innerHeight);
+
+    document.getElementById('mad-chat-inner-div').scrollTop = document.getElementById('mad-chat-inner-div').scrollHeight;
+
 });
     
 
@@ -344,7 +355,10 @@ socket_local.on('receive_chat_message', function(msg) {
 //     }
 //   }
 
-
+function enable_controls_iff_room_host() {
+    // Enable/disable controls based on whether the player is the host of the room
+    console.log('enable_controls_iff_room_host')
+}
 function get_selected_room() {
     //placeholder logic:
     let selected_room_id = last_clicked_lobby_room_id;
@@ -577,6 +591,38 @@ function populate_gui() {
         game_settings_mid.appendChild(lbl_fow_off);
         game_settings_mid.appendChild(document.createElement('br'));
         
+
+        let lbl_spectate = document.createElement('label')
+        lbl_spectate.innerHTML='Spectate on Defeat';
+    
+        let radio_spectate_on = document.createElement('input');
+        radio_spectate_on.id = 'radio_spectate_on';
+        radio_spectate_on.type = 'radio';
+        radio_spectate_on.name='Spectate on Defeat';
+        radio_spectate_on.value='On';
+        radio_spectate_on.checked= true;
+        let lbl_spectate_on = document.createElement('label')
+        lbl_spectate_on.innerHTML='On';
+        
+        let radio_spectate_off = document.createElement('input');
+        radio_spectate_off.id = 'radio_spectate_off';
+        radio_spectate_off.type = 'radio';
+        radio_spectate_off.name='Spectate on Defeat';
+        radio_spectate_off.value='Off';
+        let lbl_spectate_off = document.createElement('label')
+        lbl_spectate_off.innerHTML='Off';
+        
+        game_settings_mid.appendChild(lbl_spectate);
+        game_settings_mid.appendChild(document.createElement('br'));
+        game_settings_mid.appendChild(radio_spectate_on);
+        game_settings_mid.appendChild(lbl_spectate_on);
+        game_settings_mid.appendChild(document.createElement('br'));
+        game_settings_mid.appendChild(radio_spectate_off);
+        game_settings_mid.appendChild(lbl_spectate_off);
+        game_settings_mid.appendChild(document.createElement('br'));
+        
+        
+
         let waiting_room_id = document.createElement('div');
         waiting_room_id.id = 'waiting_room_id'
         waiting_room_id.innerHTML = 'Room:';
@@ -660,6 +706,7 @@ function populate_gui() {
             mountain_weight:Number(document.getElementById('mountains_range').value),
             ship_weight:Number(document.getElementById('ships_range').value),
             swamp_weight:Number(document.getElementById('swamps_range').value),
+            spectate_on_defeat:document.getElementById('radio_spectate_on').checked
 
         };
         

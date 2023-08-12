@@ -98,6 +98,8 @@ class Game {
         this.game_tick_server = -1;
         this.tick_speed = DEFAULT_TICK_SPEED; // ms to wait before rendering each new frame
 
+        this.spectate_on_defeat = 'spectate_on_defeat' in game_data ? game_data.spectate_on_defeat : false; // TODO add to lobby settings
+
         // let player_color_options = ['#C50F1F', '#C19C00', '#881798', '#E74856', '#16C60C', '#F9A1A5', '#B4009E', '#61D6D6', '#2222F2', '#8C8C8C', '#B9B165',
         //                             '#FF0000', '#FF8000', '#00FF00', '#FF00FF'];  
         let player_color_options = ['#48b393', '#d4a70e', '#e7843e', '#3980d7', '#90c55d', '#bb6307', '#ec6363', '#3a537c', '#7c8c3a', '#c63939', '#d65084', '#6765ae', '#486b27', '#7b2525', '#a467c8', '#643b8b'];
@@ -446,6 +448,8 @@ class Game {
     let admirals_remaining = this.players[victim_id].admiral_count();
         if (admirals_remaining == 0) { //admiral captured!
             
+            this.players[victim_id].defeated = true;
+
             //broadcast it to the players
             this.send_message_to_game_room(`${this.players[culprit_id].display_name} captured ${this.players[victim_id].display_name}`);
 
@@ -664,6 +668,8 @@ class Game {
             return true;
         // } else if (cell.owner == player_id || cell.terrain == TERRAIN_TYPE_MOUNTAIN) { 
         //     return true; 
+        } else if (this.spectate_on_defeat && this.players[player_id].defeated) {
+            return true;
         } else if (cell.owner == player_id) { 
             return true; 
         
@@ -787,7 +793,7 @@ class HumanPlayer {
         this.color = color; //temp. green
         this.queued_moves = [];
         this.is_human = true;
-        this.active = true; // true if they're still in the game
+        this.defeated = false; // false if they're still in the game
     
     }
     
@@ -842,7 +848,7 @@ class Bot {
         this.color = color;
         this.queued_moves = []
         this.is_human = false;
-        this.active = true; // if active, still in the game; if not, keep in the scoreboard but ignore during gameplay
+        this.defeated = false; // false if they're still in the game, keep in the scoreboard but ignore during gameplay
     }
 
     admiral_count() {
@@ -1166,12 +1172,13 @@ class Room {
         this.game = new Game(this.room_id, {}, []);
         this.players = [];
         this.status = 'open';
-        this.host = host_id;
+        //this.host = host_id;
 
     }
 
-    get_host() {
-        return this.host;
+    is_host(socket_id) {
+        // return this.host;
+        return io.sockets.adapter.rooms.get(this.room_id)[0] == socket_id;
     }
     
     send_player_list() {

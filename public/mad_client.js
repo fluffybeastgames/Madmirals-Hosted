@@ -173,74 +173,6 @@ function populate_room_overlay() {
 
 
 }
-// function populate_new_game_overlay(){
-//     let overlay = document.getElementById('mad-game-settings');
-    
-//     let overlay_container_box = document.createElement('div');
-//     overlay_container_box.id = 'mad-game-settings-container';
-//     overlay_container_box.addEventListener('click', function(e) { e.stopPropagation(); }); // prevent clicking on the new game box from closing the overlay
-//     overlay.appendChild(overlay_container_box)
-    
-//     let overlay_inner = document.createElement('div');
-//     overlay_inner.id = 'mad-game-settings-inner';
-//     overlay_container_box.appendChild(overlay_inner)
-    
-//     let input_name = document.createElement('input');
-//     input_name.id = 'input_name';
-//     input_name.type = 'text';
-//     input_name.value='Player One';
-    
-//     let lbl_input = document.createElement('label');
-//     lbl_input.id = 'lbl_input_name';
-//     lbl_input.htmlFor = 'input_name';
-//     lbl_input.innerHTML='Name';
-
-//     overlay_inner.appendChild(lbl_input);
-//     overlay_inner.appendChild(input_name);
-
-//     add_slider(overlay_inner, 'bots', 'Bots', 1, 10, 1, 3);
-//     add_slider(overlay_inner, 'rows', 'Rows', 10, 30, 1, 15);
-//     add_slider(overlay_inner, 'cols', 'Cols', 10, 45, 1, 15);
-//     add_slider(overlay_inner, 'mountains', 'Mountain Spawn Rate', 1, 100, 1, 15);
-//     add_slider(overlay_inner, 'ships', 'Ship Spawn Rate', 1, 100, 1, 5);
-//     add_slider(overlay_inner, 'swamps', 'Swamp Spawn rate', 1, 100, 1, 5);
-    
-//     //document.getElementById('id').checked
-//     let lbl_fow = document.createElement('label')
-//     lbl_fow.innerHTML='Fog of War';
-
-//     let radio_fog_on = document.createElement('input');
-//     radio_fog_on.id = 'radio_fog_on';
-//     radio_fog_on.type = 'radio';
-//     radio_fog_on.name='Fog of War';
-//     radio_fog_on.value='On';
-//     radio_fog_on.checked= true;
-//     let lbl_fow_on = document.createElement('label')
-//     lbl_fow_on.innerHTML='On';
-    
-//     let radio_fog_off = document.createElement('input');
-//     radio_fog_off.id = 'radio_fog_off';
-//     radio_fog_off.type = 'radio';
-//     radio_fog_off.name='Fog of War';
-//     radio_fog_off.value='Off';
-//     let lbl_fow_off = document.createElement('label')
-//     lbl_fow_off.innerHTML='Off';
-    
-//     overlay_inner.appendChild(lbl_fow);
-//     overlay_inner.appendChild(document.createElement('br'));
-//     overlay_inner.appendChild(radio_fog_on);
-//     overlay_inner.appendChild(lbl_fow_on);
-//     overlay_inner.appendChild(document.createElement('br'));
-//     overlay_inner.appendChild(radio_fog_off);
-//     overlay_inner.appendChild(lbl_fow_off);
-//     overlay_inner.appendChild(document.createElement('br'));
-    
-//     let ok_button = document.createElement('button');
-//     ok_button.innerHTML = 'Create Game'
-//     ok_button.addEventListener('click', launch_new_game);
-//     overlay_inner.appendChild(ok_button);
-       
-// }
 
 function launch_new_game(event) { 
     console.log('launch new game!')
@@ -254,7 +186,8 @@ function launch_new_game(event) {
         water_weight:100, // MAGIC NUMBER
         mountain_weight:Number(document.getElementById('mountains_range').value),
         ship_weight:Number(document.getElementById('ships_range').value),
-        swamp_weight:Number(document.getElementById('swamps_range').value)
+        swamp_weight:Number(document.getElementById('swamps_range').value),
+        spectate_on_defeat:document.getElementById('radio_spectate_on').checked
     };
     
     client_socket.emit('request_new_game', JSON.stringify(game_data))
@@ -553,7 +486,7 @@ class CellClient {
         let y = this.row*CellClient.height + CellClient.height/2;
         // Add the number of troops (if any)
         if (this.troops != 0) {
-            this.context.font = `${font_size}px Impact`;
+            this.context.font = `bold ${font_size}px Impact, sans-serif`;
             this.context.fillStyle = '#FFFFFF';
             this.context.textBaseline = 'middle';
             this.context.textAlign = 'center';
@@ -747,12 +680,15 @@ function canvas_mouse_handler(event) {
 // Originally zoomed the canvas in or out, but as this scales the whole canvas, it didn't reveal any additional cells
 function wheel_handler(event) {
     // event.preventDefault(); 
-    
-    if (event.deltaY > 0 && zoom_scale > MIN_SCALE) { // zoom out
-        zoom(false);
-    } else if (event.deltaY < 0 && zoom_scale < MAX_SCALE)  { //zoom in
-        zoom(true);
-    };
+
+    if(document.activeElement.id != 'input_chat') { // if the user is typing in the chat box, don't zoom
+        
+        if (event.deltaY > 0 && zoom_scale > MIN_SCALE) { // zoom out
+            zoom(false);
+        } else if (event.deltaY < 0 && zoom_scale < MAX_SCALE)  { //zoom in
+            zoom(true);
+        };
+    }
 }
 
 function zoom(bool_in) {
@@ -799,7 +735,19 @@ function select_cell_at(x, y) { // returns true if the active cell changed, and 
 
     //if the user clicked on a cell that is adjacent to the active cell, then move the active cell to the new cell according to the move mode
     if (selection_changed && (Math.abs(active_cell[0] - row) + Math.abs(active_cell[1] - col) == 1)) {
-        add_to_queue(active_cell[0], active_cell[1], row, col, 'none')
+        let dir = 'none';
+
+        if (active_cell[0] > row) {
+            dir = 'up';
+        } else if(active_cell[0] < row) { 
+            dir = 'down';
+        } else if(active_cell[1] > col) {
+            dir = 'left';
+        } else if(active_cell[1] < col) {
+            dir = 'right';
+        };
+
+        add_to_queue(active_cell[0], active_cell[1], row, col, dir);
     }
 
     active_cell[0] = row;
@@ -877,7 +825,7 @@ function add_to_queue(source_row, source_col, target_row, target_col, dir) {
     active_cell[0] = target_row
     active_cell[1] = target_col
     
-    render_board();
+    render_board(); //immediately render the board to show the new queued move
 
 }
 // Adapted from https://www.w3schools.com/howto/howto_js_draggable.asp, but my version's even cooler
