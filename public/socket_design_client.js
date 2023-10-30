@@ -12,6 +12,8 @@ let game_state_data; // info that persists for one turn
 
 let socket_local = io();
 
+let audio = new Audio('/audio/track_01.mp3');
+
 socket_local.on('mad_log', function(msg) {
     console.log('From server: ' + msg);
     document.getElementById('socket_log').innerHTML = document.getElementById('socket_log').innerHTML + '<br>' + msg 
@@ -263,6 +265,7 @@ function client_receives_game_state_here(game_state_string) {
 
 
 function new_game_client(game_data_string) {
+    
     game_data = JSON.parse(game_data_string); //set global variable 
     console.log('new game_data ')
     console.log(game_data)
@@ -276,7 +279,6 @@ function new_game_client(game_data_string) {
     render_board(); // display the starting conditions for the sim
 
     // Start playing background music
-    let audio = new Audio('/audio/track_01.mp3');
     audio.loop = true;
     audio.play();
 }
@@ -794,6 +796,18 @@ function populate_gui() {
         div_turn_counter.innerHTML = 'Turn: 0';
         div.appendChild(div_turn_counter);
 
+        // Add audio controls
+        let music_toggle = document.createElement('button');
+        music_toggle.innerText = 'Toggle Music';
+        music_toggle.addEventListener('click', function(){
+            if (audio.paused) {
+                audio.play();
+            } else {
+                audio.pause();
+            }
+        });
+        div.appendChild(music_toggle);
+        
         let tbl = document.createElement('table')
         div.appendChild(tbl);
         let tbl_tr =  document.createElement('tr');
@@ -814,6 +828,7 @@ function populate_gui() {
         let tbl_body = document.createElement('tbody');
         tbl_body.id = 'scoreboard_body';
         tbl.appendChild(tbl_body);
+
 
         return div;
 
