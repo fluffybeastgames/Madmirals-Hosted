@@ -274,6 +274,11 @@ function new_game_client(game_data_string) {
     create_client_cells(game_data.game.n_rows, game_data.game.n_cols); // Create an array of Cells objects, each representing one cell in the simulation
     move_mode = ACTION_MOVE_NORMAL;
     render_board(); // display the starting conditions for the sim
+
+    // Start playing background music
+    let audio = new Audio('/audio/track_01.mp3');
+    audio.loop = true;
+    audio.play();
 }
 
 
@@ -621,7 +626,36 @@ function populate_gui() {
         game_settings_mid.appendChild(lbl_spectate_off);
         game_settings_mid.appendChild(document.createElement('br'));
         
+
+        let lbl_show_all_admirals = document.createElement('label')
+        lbl_show_all_admirals.innerHTML='Reveal All Admirals';
+    
+        let radio_show_all_admirals_on = document.createElement('input');
+        radio_show_all_admirals_on.id = 'radio_show_all_admirals_on';
+        radio_show_all_admirals_on.type = 'radio';
+        radio_show_all_admirals_on.name='Reveal All Admirals';
+        radio_show_all_admirals_on.value='On';
+        radio_show_all_admirals_on.checked= true;
+        let lbl_show_all_admirals_on = document.createElement('label')
+        lbl_show_all_admirals_on.innerHTML='On';
         
+        let radio_show_all_admirals_off = document.createElement('input');
+        radio_show_all_admirals_off.id = 'radio_show_all_admirals_off';
+        radio_show_all_admirals_off.type = 'radio';
+        radio_show_all_admirals_off.name='Reveal All Admirals';
+        radio_show_all_admirals_off.value='Off';
+        let lbl_show_all_admirals_off = document.createElement('label')
+        lbl_show_all_admirals_off.innerHTML='Off';
+        
+        game_settings_mid.appendChild(lbl_show_all_admirals);
+        game_settings_mid.appendChild(document.createElement('br'));
+        game_settings_mid.appendChild(radio_show_all_admirals_on);
+        game_settings_mid.appendChild(lbl_show_all_admirals_on);
+        game_settings_mid.appendChild(document.createElement('br'));
+        game_settings_mid.appendChild(radio_show_all_admirals_off);
+        game_settings_mid.appendChild(lbl_show_all_admirals_off);
+        game_settings_mid.appendChild(document.createElement('br'));
+        // show_all_admirals
 
         let waiting_room_id = document.createElement('div');
         waiting_room_id.id = 'waiting_room_id'
@@ -706,8 +740,8 @@ function populate_gui() {
             mountain_weight:Number(document.getElementById('mountains_range').value),
             ship_weight:Number(document.getElementById('ships_range').value),
             swamp_weight:Number(document.getElementById('swamps_range').value),
-            spectate_on_defeat:document.getElementById('radio_spectate_on').checked
-
+            spectate_on_defeat:document.getElementById('radio_spectate_on').checked,
+            show_all_admirals:document.getElementById('radio_show_all_admirals_on').checked
         };
         
         return JSON.stringify(game_data)

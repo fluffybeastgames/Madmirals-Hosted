@@ -100,6 +100,9 @@ class Game {
 
         this.spectate_on_defeat = 'spectate_on_defeat' in game_data ? game_data.spectate_on_defeat : false; // TODO add to lobby settings
 
+        this.show_all_admirals = 'show_all_admirals' in game_data ? game_data.show_all_admirals : false; // add to lobby settings
+
+
         // let player_color_options = ['#C50F1F', '#C19C00', '#881798', '#E74856', '#16C60C', '#F9A1A5', '#B4009E', '#61D6D6', '#2222F2', '#8C8C8C', '#B9B165',
         //                             '#FF0000', '#FF8000', '#00FF00', '#FF00FF'];  
         let player_color_options = ['#48b393', '#d4a70e', '#e7843e', '#3980d7', '#90c55d', '#bb6307', '#ec6363', '#3a537c', '#7c8c3a', '#c63939', '#d65084', '#6765ae', '#486b27', '#7b2525', '#a467c8', '#643b8b'];
@@ -672,7 +675,8 @@ class Game {
             return true;
         } else if (cell.owner == player_id) { 
             return true; 
-        
+        } else if (cell.entity == ENTITY_TYPE_ADMIRAL && this.show_all_admirals) {
+            return true;
         } else {
             // let distance = 1
             // if ([ENTITY_TYPE_SHIP, ENTITY_TYPE_SHIP_2, ENTITY_TYPE_SHIP_3, ENTITY_TYPE_SHIP_4].includes(cell.entity)) {
