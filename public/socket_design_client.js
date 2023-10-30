@@ -635,7 +635,6 @@ function populate_gui() {
         radio_show_all_admirals_on.type = 'radio';
         radio_show_all_admirals_on.name='Reveal All Admirals';
         radio_show_all_admirals_on.value='On';
-        radio_show_all_admirals_on.checked= true;
         let lbl_show_all_admirals_on = document.createElement('label')
         lbl_show_all_admirals_on.innerHTML='On';
         
@@ -644,6 +643,7 @@ function populate_gui() {
         radio_show_all_admirals_off.type = 'radio';
         radio_show_all_admirals_off.name='Reveal All Admirals';
         radio_show_all_admirals_off.value='Off';
+        radio_show_all_admirals_off.checked= true;        
         let lbl_show_all_admirals_off = document.createElement('label')
         lbl_show_all_admirals_off.innerHTML='Off';
         
